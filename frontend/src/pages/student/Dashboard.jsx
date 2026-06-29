@@ -1,7 +1,7 @@
 import React, { useState, useEffect ,useRef} from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
-import './StudentPanel.css';
+import './Studentpanel.css';
 import MessagesSection from '../components/Messages';
 
 const Modal = ({ isOpen, onClose, title, children, size = "medium" }) => {
