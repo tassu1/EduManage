@@ -9,6 +9,7 @@ import ParentPanel from './pages/parent/Dashboard';
 function App() {
   const token = localStorage.getItem('token');
   const userRole = localStorage.getItem('userRole');
+  {console.log(userRole)}
 
   return (
     <div className="App">
