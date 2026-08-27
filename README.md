@@ -768,6 +768,55 @@ EduManage demonstrates practical implementation of:
 * Role-specific dashboards
 * Academic workflow management
 
+# ☁️ AWS EC2 Deployment
+
+The EduManage backend was successfully deployed and tested on an **AWS EC2** instance running **Amazon Linux 2023**, while the frontend remained hosted on **Vercel**.
+
+### Deployment Architecture
+
+```text
+Users
+   │
+   ▼
+Vercel Frontend
+   │
+   │ HTTP API Requests
+   ▼
+AWS EC2 (Amazon Linux 2023)
+   │
+   ▼
+Node.js / Express Backend
+   │
+   ▼
+MongoDB Atlas
+```
+
+### AWS Stack
+
+| Component | Service |
+|----------|---------|
+| Compute | Amazon EC2 |
+| Operating System | Amazon Linux 2023 |
+| Runtime | Node.js 22 |
+| Access | SSH |
+| Backend | Express.js |
+| Database | MongoDB Atlas |
+| Frontend | Vercel |
+
+### What was implemented
+
+- Provisioned an EC2 instance
+- Connected securely using SSH
+- Installed Git and Node.js 22
+- Cloned the EduManage repository
+- Configured backend environment variables
+- Deployed the Express backend on port **5000**
+- Configured EC2 Security Group for public API access
+- Connected the Vercel frontend to the EC2 backend
+- Verified the deployment through the public API endpoint
+
+> **Detailed deployment guide:** [`docs/aws/deployment.md`](docs/aws/deployment.md)
+
 ---
 
 # 📌 Project Status
