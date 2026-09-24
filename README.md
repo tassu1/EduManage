@@ -1,839 +1,271 @@
-# EduManage
+<div align="center">
 
-> A full-stack, multi-school management platform that brings school administration, academics, communication, analytics, and AI-assisted learning into one unified ecosystem.
+# 🏫 EduManage
 
-EduManage is a role-based school management platform designed to connect **Super Admins, School Admins, Teachers, Students, and Parents** through a centralized system.
+**A complete school management system — attendance, homework, grades, timetables, and messaging, in one place for admins, teachers, students, and parents.**
 
-The platform supports multiple schools while maintaining **school-level data isolation**, secure role-based access, academic management, real-time communication, file uploads, performance analytics, and an AI-powered tutor.
+[![Live App](https://img.shields.io/badge/demo-edumanageai.vercel.app-4c1?style=for-the-badge)](https://edumanageai.vercel.app/)
+![React](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-realtime-010101?logo=socket.io&logoColor=white)
+![AWS](https://img.shields.io/badge/Backend-AWS%20EC2-FF9900?logo=amazonaws&logoColor=white)
 
----
+**[🌐 Live Demo](https://edumanageai.vercel.app/)** · **[💻 Repo](https://github.com/tassu1/EduManage)** · **[🐛 Report Bug](https://github.com/tassu1/EduManage/issues)**
 
-# ✨ Features
-
-### 🏢 Multi-School Management
-
-Super Admins can manage multiple schools from a centralized platform.
-
-* Create and manage schools
-* Create and assign School Admins
-* Monitor individual school statistics
-* View platform-wide analytics
-* Maintain school-level data isolation
-
-### 🔐 Role-Based Access Control
-
-EduManage provides dedicated permissions for five roles:
-
-| Role             | Responsibilities                                                                        |
-| ---------------- | --------------------------------------------------------------------------------------- |
-| **Super Admin**  | Manage schools, assign administrators, and monitor platform-wide analytics              |
-| **School Admin** | Manage school users, classrooms, timetables, examinations, and school operations        |
-| **Teacher**      | Manage attendance, homework, assignments, grades, and communication                     |
-| **Student**      | View academic information, submit assignments, track performance, and use the AI Tutor  |
-| **Parent**       | Monitor children's attendance, grades, academic progress, and communicate with teachers |
-
-Authentication is handled using **JWT**, password security uses **bcrypt**, and protected resources are controlled through authentication and role-based authorization middleware.
+</div>
 
 ---
 
-# 🏗️ System Architecture
+## What is EduManage?
 
-EduManage follows a layered client-server architecture where the React frontend communicates with the Node.js/Express backend through REST APIs and Socket.io.
+Most schools run their day-to-day work on a mix of paper registers, printed report cards, notice boards, and WhatsApp groups. Attendance gets marked in a notebook. Grades get typed up separately. A parent finds out about their child's performance only at a parent-teacher meeting, weeks after the fact. Nothing is in one place, and no two people are looking at the same up-to-date information.
 
-```text
-                                ┌──────────────────────┐
-                                │        USERS         │
-                                │──────────────────────│
-                                │ Super Admin          │
-                                │ School Admin         │
-                                │ Teacher              │
-                                │ Student              │
-                                │ Parent               │
-                                └──────────┬───────────┘
-                                           │
-                                           ▼
-                          ┌────────────────────────────┐
-                          │       React Frontend       │
-                          │       + Tailwind CSS       │
-                          │────────────────────────────│
-                          │ Role-based Dashboards      │
-                          │ Academic Management        │
-                          │ Analytics                  │
-                          │ Communication              │
-                          │ AI Tutor                   │
-                          └─────────────┬──────────────┘
-                                        │
-                       ┌────────────────┴────────────────┐
-                       │                                 │
-                       ▼                                 ▼
-              ┌─────────────────┐              ┌─────────────────┐
-              │    REST API     │              │    Socket.io    │
-              │                 │              │                 │
-              │ Express.js      │              │ Real-time Chat  │
-              │ JWT Auth        │              │ AI Tutor        │
-              │ RBAC Middleware │              │ Typing Status   │
-              └────────┬────────┘              └────────┬────────┘
-                       │                                │
-                       └───────────────┬────────────────┘
-                                       │
-                                       ▼
-                         ┌─────────────────────────┐
-                         │        Backend          │
-                         │─────────────────────────│
-                         │ Controllers             │
-                         │ Routes                  │
-                         │ Middleware              │
-                         │ Business Logic          │
-                         │ Socket Handlers         │
-                         └────────────┬────────────┘
-                                      │
-                    ┌─────────────────┼──────────────────┐
-                    │                 │                  │
-                    ▼                 ▼                  ▼
-             ┌────────────┐   ┌──────────────┐   ┌──────────────┐
-             │  MongoDB   │   │  Cloudinary  │   │ OpenRouter   │
-             │ + Mongoose │   │    + Multer  │   │     API      │
-             └────────────┘   └──────────────┘   └──────────────┘
+**EduManage replaces all of that with one website.** A school signs up, and from then on:
+
+- **Admins** manage teachers, students, classrooms, timetables, and exams for their school.
+- **Teachers** mark attendance, assign homework, and enter grades — all online, updated instantly.
+- **Students** log in and see their own timetable, homework, and grades the moment they're posted, and can ask an AI tutor for help when they're stuck.
+- **Parents** log in and see exactly what their child's teacher sees — attendance, grades, progress — without waiting for a meeting, and can message the teacher directly.
+
+Everyone is looking at the same live data, just filtered to what's relevant to them — and one platform can run any number of schools at once, each one's data kept completely separate from the others.
+
+### Why it exists
+
+This was built to solve a real, unglamorous problem: school administration doesn't need to be reinvented, it needs to be *centralized*. The interesting engineering problem underneath that simple idea is access control — five very different people need five very different views of the same data, and none of them should ever be able to see another school's information or another role's permissions by accident. That's the problem EduManage is actually built around solving.
+
+---
+
+## Features
+
+- **Five role-based dashboards** — Super Admin, School Admin, Teacher, Student, Parent — each seeing only what they're supposed to
+- **Multi-school support**, with strict data isolation enforced on the backend, not just hidden in the interface
+- **Full academic workflow** — classrooms, timetables, exam schedules, attendance, homework, submissions, grading
+- **Real-time messaging** between teachers, students, and parents via Socket.IO, with typing indicators
+- **AI tutor** for students, backed by OpenRouter with automatic fallback if the primary model is unavailable
+- **Analytics** at the platform level (Super Admin), school level (School Admin), and individual level (Student)
+- **JWT authentication + bcrypt password hashing**, with authorization middleware guarding every protected route
+
+---
+
+## Tech Stack
+
+<table>
+<tr>
+<td valign="top">
+
+**Frontend**
+- React 19 + Vite
+- React Router
+- Axios
+- Socket.IO Client
+- Tailwind CSS
+
+</td>
+<td valign="top">
+
+**Backend**
+- Node.js + Express 5
+- MongoDB + Mongoose
+- Socket.IO
+- JWT + bcryptjs
+- Multer
+
+</td>
+<td valign="top">
+
+**AI & Hosting**
+- OpenRouter (primary + fallback models)
+- Frontend → **Vercel**
+- Backend → **AWS EC2** (Amazon Linux 2023)
+- Database → **MongoDB Atlas**
+
+</td>
+</tr>
+</table>
+
+> The backend isn't just deployed to a managed platform like Vercel or Render — it runs on a self-provisioned **AWS EC2** instance, set up and configured from scratch (SSH access, Node install, process management, security group/port configuration). See [Deployment](#deployment) below for the exact steps.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    U["Super Admin · School Admin\nTeacher · Student · Parent"]
+
+    subgraph FE["Frontend — React + Vite\n(Vercel)"]
+        UI["Role-based dashboards"]
+    end
+
+    subgraph BE["Backend — Express + Socket.IO\n(AWS EC2)"]
+        MW["Auth + RBAC + school-context\nmiddleware"]
+        API["REST controllers"]
+        WS["Socket handlers\nchat · AI tutor"]
+    end
+
+    DB[("MongoDB Atlas\nUsers · Schools · Classrooms\nAttendance · Grades · Homework")]
+    FS["Multer\nfile uploads"]
+    LLM["OpenRouter\nprimary + fallback models"]
+
+    U --> UI
+    UI -- "REST requests" --> MW
+    UI -- "WebSocket" --> WS
+    MW --> API
+    API --> DB
+    API --> FS
+    WS --> DB
+    WS --> LLM
+    LLM -- "AI response" --> WS
 ```
 
----
+Everything a browser sends — REST or WebSocket — lands on the same Express process running on EC2. REST requests go through the auth/RBAC/school-context middleware chain before reaching a controller; Socket.IO connections carry their own auth handshake and route straight to the chat or AI-tutor handler, since those need to push data back without the client asking again.
 
-# 🔄 Request & Authorization Flow
+### Request & authorization flow
 
-Protected requests pass through authentication, authorization, and school/resource validation before reaching the controller.
-
-```text
-Client Request
-      │
-      ▼
-┌──────────────────┐
-│   JWT Token      │
-│   Verification   │
-└────────┬─────────┘
-         │
-         ▼
-┌───────────────────┐
-│ Authentication    │
-│ Middleware        │
-└─────────┬─────────┘
-          │
-          ▼
-┌───────────────────┐
-│ Role Authorization│
-│ Middleware        │
-└─────────┬─────────┘
-          │
-          ▼
-┌──────────────────────┐
-│ School / Resource    │
-│ Validation            │
-└─────────┬────────────┘
-          │
-          ▼
-┌───────────────────┐
-│ Controller        │
-│ Business Logic    │
-└─────────┬─────────┘
-          │
-          ▼
-┌───────────────────┐
-│ MongoDB / Service │
-└─────────┬─────────┘
-          │
-          ▼
-       Response
+```mermaid
+flowchart TD
+    A["Client request"] --> B["JWT verified —\nwho are you?"]
+    B --> C["Role checked against the route —\nare you allowed to do this kind of thing?"]
+    C --> D["School / resource ownership checked —\nis this record yours to touch?"]
+    D --> E["Controller runs"]
+    E --> F[("MongoDB")]
+    F --> G["Response"]
 ```
 
-This ensures that authenticated users can only access resources permitted by their role and school context.
+Three checks, in that order, on every protected route. Drop any one of them and either an unauthenticated request gets through, or a School Admin from one school can reach into another's data.
 
----
+### Multi-school isolation
 
-# 🏫 Multi-School Architecture
+```mermaid
+flowchart TD
+    SA["Super Admin\n(platform-wide access)"]
+    SA --> S1["School A"]
+    SA --> S2["School B"]
+    SA --> S3["School C"]
 
-EduManage is designed around a multi-school structure.
+    S1 --> S1U["Admin · Teachers · Students · Parents"]
+    S2 --> S2U["Admin · Teachers · Students · Parents"]
+    S3 --> S3U["Admin · Teachers · Students · Parents"]
 
-```text
-                         ┌──────────────────┐
-                         │    SUPER ADMIN   │
-                         └────────┬─────────┘
-                                  │
-                 ┌────────────────┼────────────────┐
-                 ▼                ▼                ▼
-           ┌──────────┐     ┌──────────┐     ┌──────────┐
-           │ School A │     │ School B │     │ School C │
-           │ schoolId │     │ schoolId │     │ schoolId │
-           └────┬─────┘     └────┬─────┘     └────┬─────┘
-                │                │                │
-          ┌─────┼─────┐    ┌─────┼─────┐    ┌─────┼─────┐
-          ▼     ▼     ▼    ▼     ▼     ▼    ▼     ▼     ▼
-        Admin Teacher Student  Admin Teacher Student  ...
+    S1U -.->|"cannot query"| S2
+    S2U -.->|"cannot query"| S3
 ```
 
-School-specific resources are associated with their corresponding school.
+Every school-scoped document carries the owning school's ID, and every query is filtered by the requester's own `schoolId` before it runs — isolation is a property of the query, not a UI convention. Only the Super Admin's role crosses the school boundary.
 
-This provides logical isolation so that users and resources belonging to one school are separated from those belonging to another school.
+### AI tutor pipeline
+
+```mermaid
+flowchart LR
+    Q["Student's question"] --> H["AI socket handler"]
+    C["Recent conversation\nhistory"] --> H
+    H --> AI["AI service"]
+    AI -- "primary model" --> M1["Model A"]
+    AI -. "fallback if unavailable" .-> M2["Model B"]
+    M1 --> R["Response"]
+    M2 --> R
+    R --> H
+    H --> S["Sent back over socket"]
+    H --> P[("Saved to MongoDB")]
+```
+
+A student's question goes to the socket handler along with recent conversation history for context, gets routed through OpenRouter (falling back to a secondary model if the primary is unavailable), and streams back over the same socket connection. Conversations are persisted so a student can pick up a learning thread later.
 
 ---
 
-# 👥 Role Architecture
+## Project Structure
 
-Each role operates within a defined permission boundary.
-
-```text
-                         SUPER ADMIN
-                              │
-                    Platform-wide Control
-                              │
-             ┌────────────────┴────────────────┐
-             │                                 │
-      School Management                 Global Analytics
-             │
-             ▼
-        SCHOOL ADMIN
-             │
-      School-level Control
-             │
-     ┌───────┼────────┐
-     ▼       ▼        ▼
- TEACHERS  STUDENTS  PARENTS
-     │       │        │
-     ▼       ▼        ▼
- Academic  Learning  Monitoring
-Management & AI     & Communication
 ```
-
-### Super Admin
-
-* Create and manage schools
-* Create and assign School Admins
-* Monitor platform-wide analytics
-* Monitor individual school performance
-
-### School Admin
-
-* Manage teachers, students, and parents
-* Create classrooms
-* Assign teachers and subjects
-* Manage timetables
-* Manage examination schedules
-* Monitor school analytics
-* Publish school notifications
-
-### Teacher
-
-* Manage attendance
-* Create homework and assignments
-* Review student submissions
-* Manage grades
-* Communicate with students and parents
-
-### Student
-
-* View timetable and examination schedules
-* View and submit assignments
-* Track attendance and grades
-* Monitor academic performance
-* Communicate with teachers
-* Interact with the AI Tutor
-
-### Parent
-
-* Monitor children's attendance
-* Track academic performance
-* View grades
-* Communicate with teachers
-* Monitor their child's progress
-
----
-
-# 📚 Academic Workflow
-
-EduManage connects the major academic workflows together.
-
-```text
-                    SCHOOL ADMIN
-                         │
-             ┌───────────┼────────────┐
-             ▼           ▼            ▼
-         Classroom    Timetable   Exam Schedule
-             │
-             ▼
-          Teacher
-             │
-       ┌─────┼──────────┐
-       ▼     ▼          ▼
- Attendance Homework    Grades
-              │
-              ▼
-       Student Submission
-              │
-              ▼
-           Teacher
-              │
-              ▼
-        Grade / Feedback
-              │
-              ▼
-       Student Performance
-              │
-              ▼
-            Parent
-```
-
-This workflow connects classroom management, attendance, assignments, grading, student performance, and parent monitoring.
-
----
-
-# 📊 Analytics Architecture
-
-EduManage provides analytics at multiple levels of the platform.
-
-```text
-Attendance ───────┐
-                  │
-Grades ───────────┤
-                  │
-Classrooms ───────┤
-                  │
-Students ─────────┤
-                  ▼
-          MongoDB Queries /
-             Aggregations
-                  │
-                  ▼
-            Analytics
-                  │
-       ┌──────────┼───────────┐
-       ▼          ▼           ▼
- Super Admin   School       Student
-  Analytics   Analytics    Analytics
-                              │
-                              ▼
-                           Parent
-                           Monitoring
-```
-
-### Super Admin Analytics
-
-* Total students
-* Teacher and staff statistics
-* Classroom statistics
-* Attendance performance
-* Academic performance
-* School-level comparisons
-
-### School Analytics
-
-* Student enrollment
-* Classroom statistics
-* Attendance performance
-* Academic performance
-* Top-performing students
-* School activity
-
-### Student Analytics
-
-Students can monitor:
-
-* Attendance
-* Grades
-* Academic performance
-* Strengths and areas requiring improvement
-
----
-
-# 💬 Real-Time Communication
-
-EduManage uses **Socket.io** for real-time communication.
-
-```text
-              ┌──────────────┐
-              │    Teacher   │
-              └──────┬───────┘
-                     │
-                     │
-                 Socket.io
-                     │
-              ┌──────┴───────┐
-              │              │
-              ▼              ▼
-        ┌──────────┐   ┌──────────┐
-        │ Student  │   │  Parent  │
-        └──────────┘   └──────────┘
-```
-
-Real-time functionality includes:
-
-* Teacher ↔ Student communication
-* Teacher ↔ Parent communication
-* Messaging
-* Typing indicators
-* AI Tutor interaction
-* AI response/loading states
-
----
-
-# 🤖 AI Tutor Architecture
-
-EduManage includes an AI-powered conversational tutor for students using the **OpenRouter API**.
-
-The backend is designed around configurable AI models, allowing the application to switch between models and define fallback models when required.
-
-```text
-Student
-   │
-   │ Question
-   ▼
-┌──────────────────┐
-│   React Chat UI  │
-└────────┬─────────┘
-         │
-         │ Socket.io
-         ▼
-┌────────────────────────┐
-│    AI Socket Handler   │
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│   Conversation Context │
-│   + Recent Messages    │
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│       AI Service       │
-│────────────────────────│
-│ Configurable Models    │
-│ Fallback Models        │
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│      OpenRouter API    │
-└───────────┬────────────┘
-            │
-       ┌────┴─────┐
-       ▼          ▼
-   Primary     Fallback
-    Model       Model(s)
-       │          │
-       └────┬─────┘
-            ▼
-        AI Response
-            │
-            ▼
-         Socket.io
-            │
-            ▼
-          Student
-```
-
-### Model Flexibility
-
-Using OpenRouter allows the backend to work with different AI models without tightly coupling the application to a single model.
-
-The architecture supports:
-
-* Configurable AI models
-* Model switching
-* Fallback models
-* Centralized AI integration
-* Handling model availability and performance differences
-
-### Conversation Context
-
-Recent messages from a student's AI conversation are retrieved and provided as context to maintain conversational continuity.
-
-```text
-Student Question
-      +
-Recent Conversation History
-      ↓
-   AI Service
-      ↓
-Selected Model
-      ↓
- OpenRouter
-      ↓
- AI Response
-      ↓
-Conversation History
-```
-
-AI conversations are persisted so that relevant learning history can be accessed later.
-
----
-
-# ☁️ File Upload Architecture
-
-EduManage uses **Multer** for handling multipart uploads and **Cloudinary** for cloud-based file storage.
-
-```text
-Student / Teacher
-       │
-       ▼
-   File Upload
-       │
-       ▼
-     Multer
-       │
-       ▼
-   Express API
-       │
-       ▼
-   Cloudinary
-       │
-       ▼
-   File URL
-       │
-       ▼
-    MongoDB
-```
-
-This approach keeps uploaded files in cloud storage while storing their references in MongoDB.
-
----
-
-# 🗄️ Data Model
-
-EduManage uses MongoDB with Mongoose to model the core entities of the platform.
-
-```text
-User
- │
- ├── Super Admin
- ├── School Admin
- ├── Teacher
- ├── Student
- └── Parent
-       │
-       ▼
-     School
-       │
-       ├── Classroom
-       │     ├── Teacher
-       │     └── Students
-       │
-       ├── Timetable
-       ├── Exam Schedule
-       ├── Attendance
-       ├── Grade
-       ├── Homework
-       ├── Homework Submission
-       └── Messages
-```
-
-### Core Models
-
-* User
-* School
-* Classroom
-* Attendance
-* Grade
-* Homework
-* Homework Submission
-* Exam Schedule
-* Timetable
-* Message
-
----
-
-# 📁 Project Structure
-
-```text
 EduManage/
-│
 ├── backend/
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── socketHandlers/
-│   ├── server.js
-│   └── package.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── ...
-│   └── package.json
-│
-└── README.md
+│   ├── server.js              # Express app + Socket.IO setup, route mounting
+│   ├── config/db.js            # Mongoose connection
+│   ├── controllers/            # Business logic per route
+│   ├── middleware/             # JWT auth, role checks, school-context checks
+│   ├── models/                 # User, School, Classroom, Attendance, Grade, Homework, ...
+│   ├── routes/                 # auth, superAdminRoutes, schoolAdminRoutes,
+│   │                            #   teacherRoutes, studentRoutes, parentRoutes
+│   └── socketHandlers/         # aiSocketHandler, chatSocketHandler
+└── frontend/
+    └── src/
+        ├── components/
+        ├── pages/               # One set of pages per role dashboard
+        └── services/             # API client, socket client
+```
+
+Route groups mounted in `server.js`: `/api/auth`, `/api/super`, `/api/school-admin`, `/api/teacher`, `/api/student`, `/api/parent` — one route file per role.
+
+---
+
+## Deployment
+
+- **Frontend** → Vercel (static Vite build)
+- **Backend** → **AWS EC2**, Amazon Linux 2023, Node.js — provisioned and configured manually (no managed PaaS)
+- **Database** → MongoDB Atlas
+
+Backend deployment steps: provision the EC2 instance → connect over SSH → install Git and Node.js → clone the repo → set the environment variables below → run the Express server → open the port in the EC2 security group → point the Vercel frontend's API URL at the EC2 public address.
+
+```
+Users → Vercel (frontend) → HTTP / WebSocket → AWS EC2 (Express + Socket.IO) → MongoDB Atlas
 ```
 
 ---
 
-# 🛡️ Security & Access Control
+## Running It Locally
 
-EduManage uses multiple layers of access control.
-
-```text
-Authentication
-      │
-      ▼
-JWT Verification
-      │
-      ▼
-Role Authorization
-      │
-      ▼
-School Context
-      │
-      ▼
-Resource Access
-```
-
-### Security mechanisms
-
-* JWT-based authentication
-* bcrypt password hashing
-* Role-based authorization middleware
-* Protected API routes
-* School-level resource validation
-* School-aware real-time communication
-
----
-
-# 🛠️ Tech Stack
-
-| Layer             | Technologies                          |
-| ----------------- | ------------------------------------- |
-| Frontend          | React, Vite, Tailwind CSS             |
-| Backend           | Node.js, Express.js                   |
-| API               | REST API                              |
-| Real-Time         | Socket.io                             |
-| Database          | MongoDB, Mongoose                     |
-| Authentication    | JWT                                   |
-| Password Security | bcrypt                                |
-| File Uploads      | Multer, Cloudinary                    |
-| AI Integration    | OpenRouter API                        |
-| AI Architecture   | Configurable Models + Fallback Models |
-
----
-
-# ⚙️ Environment Variables
-
-Create the required environment variables for the backend.
-
-```env
-PORT=5000
-
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-
-OPENROUTER_API_KEY=your_openrouter_api_key
-
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-```
-
-> Never commit real credentials, API keys, or secrets to the repository.
-
----
-
-# 🚀 Getting Started
-
-## 1. Clone the Repository
+You'll need Node 18+, a MongoDB instance (local or [Atlas](https://www.mongodb.com/atlas)), and an [OpenRouter](https://openrouter.ai/) API key.
 
 ```bash
 git clone https://github.com/tassu1/EduManage.git
 cd EduManage
 ```
 
-## 2. Install Backend Dependencies
-
+**Backend:**
 ```bash
 cd backend
 npm install
 ```
-
-Configure the backend environment variables and start the development server:
-
+Create `backend/.env`:
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+OPENROUTER_API_KEY=your_openrouter_api_key
+```
 ```bash
 npm run dev
 ```
 
-## 3. Install Frontend Dependencies
-
-Open another terminal:
-
+**Frontend**, in a second terminal:
 ```bash
 cd frontend
 npm install
-```
-
-Start the frontend development server:
-
-```bash
 npm run dev
 ```
 
----
-
-# 🔄 Complete Platform Flow
-
-The following simplified flow represents how the major parts of EduManage work together:
-
-```text
-                         ┌─────────────────┐
-                         │   SUPER ADMIN   │
-                         └────────┬────────┘
-                                  │
-                         Creates Schools
-                                  │
-                                  ▼
-                         ┌─────────────────┐
-                         │  SCHOOL ADMIN   │
-                         └────────┬────────┘
-                                  │
-                    Manages School Resources
-                                  │
-               ┌──────────────────┼──────────────────┐
-               ▼                  ▼                  ▼
-          ┌─────────┐        ┌─────────┐        ┌─────────┐
-          │ Teacher │        │ Student │        │ Parent  │
-          └────┬────┘        └────┬────┘        └────┬────┘
-               │                  │                  │
-               │                  │                  │
-       ┌───────┼────────┐         │          ┌───────┘
-       ▼       ▼        ▼         ▼          ▼
- Attendance Homework  Grades   AI Tutor   Monitoring
-       │       │        │         │          │
-       └───────┴────────┼─────────┴──────────┘
-                        │
-                        ▼
-                 ┌──────────────┐
-                 │   MongoDB    │
-                 └──────────────┘
-
-          Real-Time Communication
-                    │
-                    ▼
-                Socket.io
-
-          File Storage
-                    │
-                    ▼
-                Cloudinary
-
-          AI Processing
-                    │
-                    ▼
-              OpenRouter API
-```
+The app runs at `http://localhost:5173`. Never commit real credentials to the repo.
 
 ---
 
-# 🎯 Project Goals
+## Roadmap
 
-EduManage was built to bring the major academic and administrative workflows of a school into one connected platform.
+- [ ] Tests around the RBAC middleware — this is the piece where a bug becomes a data-isolation problem, not just a broken feature
+- [ ] Docker for the backend, for consistent local setup
+- [ ] CSV bulk import for onboarding a school's existing student/teacher roster
+- [ ] CI checks on PRs
 
-The platform focuses on:
-
-* Centralized school management
-* Multi-school data isolation
-* Secure role-based access
-* Academic workflow automation
-* Real-time communication
-* Student performance tracking
-* Cloud-based file management
-* AI-assisted learning
-* Flexible AI model integration
+Ideas or bugs → [open an issue](https://github.com/tassu1/EduManage/issues).
 
 ---
 
-# 🧠 Engineering Highlights
+## Contributing
 
-EduManage demonstrates practical implementation of:
-
-* Multi-school architecture
-* Role-Based Access Control (RBAC)
-* JWT authentication
-* RESTful API design
-* MongoDB data modeling
-* MongoDB aggregation
-* Middleware-based authorization
-* School-level data isolation
-* Real-time communication with Socket.io
-* Cloudinary file storage
-* Multer-based file handling
-* OpenRouter API integration
-* Configurable AI models
-* AI fallback model architecture
-* Role-specific dashboards
-* Academic workflow management
-
-# ☁️ AWS EC2 Deployment
-
-The EduManage backend was successfully deployed and tested on an **AWS EC2** instance running **Amazon Linux 2023**, while the frontend remained hosted on **Vercel**.
-
-### Deployment Architecture
-
-```text
-Users
-   │
-   ▼
-Vercel Frontend
-   │
-   │ HTTP API Requests
-   ▼
-AWS EC2 (Amazon Linux 2023)
-   │
-   ▼
-Node.js / Express Backend
-   │
-   ▼
-MongoDB Atlas
-```
-
-### AWS Stack
-
-| Component | Service |
-|----------|---------|
-| Compute | Amazon EC2 |
-| Operating System | Amazon Linux 2023 |
-| Runtime | Node.js 22 |
-| Access | SSH |
-| Backend | Express.js |
-| Database | MongoDB Atlas |
-| Frontend | Vercel |
-
-### What was implemented
-
-- Provisioned an EC2 instance
-- Connected securely using SSH
-- Installed Git and Node.js 22
-- Cloned the EduManage repository
-- Configured backend environment variables
-- Deployed the Express backend on port **5000**
-- Configured EC2 Security Group for public API access
-- Connected the Vercel frontend to the EC2 backend
-- Verified the deployment through the public API endpoint
-
-> **Detailed deployment guide:** [`docs/aws/deployment.md`](docs/aws/deployment.md)
+Fork it, branch off, run both `backend` and `frontend` locally per the steps above, and open a PR. If you're touching permissions, test the role you *didn't* mean to affect — a School Admin change that accidentally loosens what a Teacher can reach is the easiest mistake to make in a codebase shaped like this one.
 
 ---
 
-# 📌 Project Status
+## Author
 
-EduManage is a full-stack project focused on building a scalable school-management ecosystem using modern web technologies, real-time communication, cloud storage, and flexible AI integration.
-
----
-
-# 👨‍💻 Author
-
-**Tahseen**
-
-* GitHub: [@tassu1](https://github.com/tassu1)
-* Portfolio: [tassu1.vercel.app](https://tassu1.vercel.app/)
-
----
-
-# 📄 License
-
-This project is intended for educational and portfolio purposes.
+Built by **Tahseen** ([@tassu1](https://github.com/tassu1)) — [Portfolio](https://tassu1.vercel.app/)
