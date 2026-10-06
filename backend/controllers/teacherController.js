@@ -1,7 +1,7 @@
 const Attendance = require("../models/Attendance");
 const Grade = require("../models/Grade");
 const Homework = require("../models/Homework");
-const HomeworkSubmission = require("../models/HomeworkSubmisson"); // ✅ ADDED
+const HomeworkSubmission = require("../models/HomeworkSubmisson"); 
 const Classroom = require("../models/Classroom");
 const User = require("../models/User");
 const mongoose = require("mongoose");
