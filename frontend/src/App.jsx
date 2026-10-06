@@ -8,8 +8,8 @@ import ParentPanel from './pages/parent/Dashboard';
 
 function App() {
   const token = localStorage.getItem('token');
-  const userRole = localStorage.getItem('userRole');
-  {console.log(userRole)}
+  // const userRole = localStorage.getItem('userRole');
+ 
 
   return (
     <div className="App">
@@ -17,7 +17,7 @@ function App() {
         <Routes>
           <Route
             path='/'
-            element={token ? <Navigate to={`/${userRole}/dashboard`} replace /> : <Login />}
+            element ={<Login></Login>} 
           />
 
           <Route
