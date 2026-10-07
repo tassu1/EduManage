@@ -216,19 +216,29 @@ exports.getSuperDashboard = async (req, res) => {
   try {
 
 
-    const totalSchools = await School.countDocuments({ superAdmin: req.user.id });
-    const totalAdmins = await User.countDocuments({ 
-      role: "schooladmin", 
-      createdBy: req.user.id 
-    });
-    const totalTeachers = await User.countDocuments({ 
-      role: "teacher", 
-      createdBy: req.user.id 
-    });
-    const totalStudents = await User.countDocuments({ 
-      role: "student", 
-      createdBy: req.user.id 
-    });
+    const schools = await School.find(
+  { superAdmin: req.user.id },
+  { _id: 1 }
+);
+
+const schoolIds = schools.map((school) => school._id);
+
+const totalSchools = schoolIds.length;
+
+const totalAdmins = await User.countDocuments({
+  role: "schooladmin",
+  createdBy: req.user.id,
+});
+
+const totalTeachers = await User.countDocuments({
+  role: "teacher",
+  school: { $in: schoolIds },
+});
+
+const totalStudents = await User.countDocuments({
+  role: "student",
+  school: { $in: schoolIds },
+});
 
     const dashboardData = {
       totalSchools,
@@ -237,6 +247,7 @@ exports.getSuperDashboard = async (req, res) => {
       totalStudents,
       message: "Your schools dashboard"
     };
+   
 
     res.json(dashboardData);
   } catch (err) {
