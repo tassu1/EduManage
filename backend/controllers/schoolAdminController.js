@@ -69,7 +69,7 @@ exports.getUsersByRole = async (req, res) => {
     const schoolId = await checkSchoolAdmin(req);
     const { role } = req.params;
 
-    const school = await School.findById(schoolId).populate(role , 'name email role department');
+    const school = await School.findById(schoolId).populate(role , 'name email role department createdAt');
     if (!school) return res.status(404).json({ message: "School not found" });
 
     const users = school[role ]; 
