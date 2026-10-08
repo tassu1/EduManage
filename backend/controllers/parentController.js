@@ -176,7 +176,7 @@ exports.getMyProfile = async (req, res) => {
 exports.getDashboard = async (req, res) => {
   try {
     const parentId = checkParent(req);
-
+    const parent = await User.findById(parentId);
     const children = await User.find({ 
       parentEmail: req.user.email,
       school: req.user.school, 
@@ -273,10 +273,9 @@ exports.getDashboard = async (req, res) => {
       timestamp: msg.createdAt,
       childName: msg.student?.name || 'Child'
     }));
-
     res.json({
       parent: {
-        name: req.user.name,
+        name: parent.name,
         email: req.user.email,
         school: req.user.school
       },
@@ -284,7 +283,7 @@ exports.getDashboard = async (req, res) => {
         _id: child._id,
         name: child.name,
         email: child.email,
-        classroom: child.classroom?.name,
+        classroom: child.classroom,
         parentEmail: child.parentEmail,
         school: child.school
       })),
