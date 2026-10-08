@@ -159,6 +159,13 @@ exports.getMyAttendance = async (req, res) => {
       status: "present" 
     });
     const attendancePercentage = totalClasses > 0 ? (presentClasses / totalClasses) * 100 : 0;
+    summary= {
+        totalClasses,
+        presentClasses,
+        absentClasses: totalClasses - presentClasses,
+        attendancePercentage: attendancePercentage + '%'
+      }
+      console.log(summary)
 
     res.json({
       student: req.user.name,
