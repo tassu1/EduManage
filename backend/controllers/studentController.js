@@ -101,6 +101,7 @@ exports.getDashboard = async (req, res) => {
         parents: student.parents
       },
       summary: {
+        
         recentAttendance: recentAttendancePercentage.toFixed(2) + '%',
         totalExams: recentGrades.length,
         upcomingHomework: upcomingHomework.length,
@@ -122,7 +123,7 @@ exports.getDashboard = async (req, res) => {
       upcomingExams: upcomingExams
     };
 
-  
+  console.log(dashboardData)
 
     res.json(dashboardData);
 
