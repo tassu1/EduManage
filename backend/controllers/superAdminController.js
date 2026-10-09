@@ -259,18 +259,39 @@ const totalStudents = await User.countDocuments({
 exports.getSchoolAnalytics = async (req, res) => {
   try {
     const { schoolId } = req.params;
+     console.log("aagya")
 
     const school = await School.findOne({ 
       _id: schoolId, 
       superAdmin: req.user.id 
     }).populate('teachers students parents staff adminId');
-
+console.log("idhr")
     if (!school) {
       return res.status(404).json({ message: "School not found or not authorized" });
     }
+console.log("mtlb idhr")
+    const attendanceRecords = await Attendance.find({ school: schoolId });
+    console.log(attendanceRecords)
+    if (attendanceRecords.length === 0) {
+      return { average: 0, totalRecords: 0, present: 0, absent: 0 };
+    }
 
-    const attendanceData = await calculateRealAttendance(schoolId);
-    const gradeData = await calculateRealGrades(schoolId);
+    const presentCount = attendanceRecords.filter(record => record.status === 'present').length;
+    const average = Number(((presentCount / attendanceRecords.length) * 100).toFixed(2));
+    average.toFixed(2);
+
+    const gradeRecords = await Grade.find({ school: schoolId });
+    
+    if (gradeRecords.length === 0) {
+      return { average: 0, totalRecords: 0, highest: 0, lowest: 0 };
+    }
+
+    const totalPercentage = gradeRecords.reduce((sum, record) => sum + record.percentage, 0);
+   const averagegr = Number((totalPercentage / gradeRecords.length).toFixed(2));
+const highest = Number(Math.max(...gradeRecords.map(record => record.percentage)).toFixed(2));
+const lowest = Number(Math.min(...gradeRecords.map(record => record.percentage)).toFixed(2));
+   
+    console.log("dekhte h")
 
     const analyticsData = {
       schoolInfo: {
@@ -286,8 +307,8 @@ exports.getSchoolAnalytics = async (req, res) => {
         staff: school.staff.length
       },
       performance: {
-        attendance: attendanceData.average,
-        grades: gradeData.average
+        attendance: average,
+        grades: averagegr
       },
       feesStructure: school.feesStructure,
       recentActivity: [
@@ -301,7 +322,7 @@ exports.getSchoolAnalytics = async (req, res) => {
         }
       ]
     };
-
+    console.log(analyticsData)
     res.json(analyticsData);
   } catch (err) {
     res.status(err.statusCode || 500).json({ message: err.message });
@@ -309,51 +330,34 @@ exports.getSchoolAnalytics = async (req, res) => {
 };
 
 
-const calculateRealAttendance = async (schoolId) => {
-  try {
+// const calculateRealAttendance = async (schoolId) => {
+//   try {
   
-    const attendanceRecords = await Attendance.find({ school: schoolId });
     
-    if (attendanceRecords.length === 0) {
-      return { average: 0, totalRecords: 0, present: 0, absent: 0 };
-    }
-
-    const presentCount = attendanceRecords.filter(record => record.status === 'present').length;
-    const average = (presentCount / attendanceRecords.length) * 100;
-
-    return {
-      average: Math.round(average),
-      totalRecords: attendanceRecords.length,
-      present: presentCount,
-      absent: attendanceRecords.length - presentCount
-    };
-  } catch (error) {
-    return { average: 0, totalRecords: 0, present: 0, absent: 0 };
-  }
-};
+//     return {
+//       average: Math.round(average),
+//       totalRecords: attendanceRecords.length,
+//       present: presentCount,
+//       absent: attendanceRecords.length - presentCount
+//     };
+//   } catch (error) {
+//     return { average: 0, totalRecords: 0, present: 0, absent: 0 };
+//   }
+// };
 
 
-const calculateRealGrades = async (schoolId) => {
-  try {
+// const calculateRealGrades = async (schoolId) => {
+//   try {
 
-    const gradeRecords = await Grade.find({ school: schoolId });
     
-    if (gradeRecords.length === 0) {
-      return { average: 0, totalRecords: 0, highest: 0, lowest: 0 };
-    }
 
-    const totalPercentage = gradeRecords.reduce((sum, record) => sum + record.percentage, 0);
-    const average = totalPercentage / gradeRecords.length;
-    const highest = Math.max(...gradeRecords.map(record => record.percentage));
-    const lowest = Math.min(...gradeRecords.map(record => record.percentage));
-
-    return {
-      average: Math.round(average),
-      totalRecords: gradeRecords.length,
-      highest: Math.round(highest),
-      lowest: Math.round(lowest)
-    };
-  } catch (error) {
-    return { average: 0, totalRecords: 0, highest: 0, lowest: 0 };
-  }
-};
+//     return {
+//       average: Math.round(average),
+//       totalRecords: gradeRecords.length,
+//       highest: Math.round(highest),
+//       lowest: Math.round(lowest)
+//     };
+//   } catch (error) {
+//     return { average: 0, totalRecords: 0, highest: 0, lowest: 0 };
+//   }
+// };
