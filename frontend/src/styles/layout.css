@@ -1,0 +1,242 @@
+/*
+  Shared layout utility classes — the app shell, content wrapper, and a
+  handful of generic patterns (stat grids, detail rows, section titles)
+  reused across every role's dashboard so each one doesn't reinvent them.
+*/
+
+.em-app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.em-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.em-content {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-7);
+}
+
+.em-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.em-loading {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  padding: var(--space-6) 0;
+  text-align: center;
+}
+
+.em-entity-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.em-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.em-detail-row:last-child {
+  border-bottom: none;
+}
+
+.em-detail-row strong {
+  color: var(--ink);
+  font-weight: 500;
+  text-align: right;
+}
+
+.em-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.em-section-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 var(--space-3);
+}
+
+.em-analytics-section {
+  margin-bottom: var(--space-5);
+}
+
+.em-metric-note {
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  margin-top: var(--space-3);
+}
+
+.em-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.em-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.em-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.em-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--ink-soft);
+  vertical-align: middle;
+}
+
+.em-table tr:last-child td {
+  border-bottom: none;
+}
+
+.em-table input,
+.em-table select,
+.em-table textarea {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  width: 100%;
+}
+
+.em-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.em-badge--success { background: var(--success-soft); color: var(--success); }
+.em-badge--danger { background: var(--danger-soft); color: var(--danger); }
+.em-badge--info { background: var(--info-soft); color: var(--info); }
+.em-badge--default { background: var(--paper); color: var(--ink-soft); }
+
+/* Chat bubble pattern — shared by the AI Tutor (Student) and Messages
+   (Teacher/Student/Parent), since both are conversational UIs. */
+
+.em-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-y: auto;
+  padding: var(--space-2) 0;
+}
+
+.em-chat-bubble {
+  max-width: 75%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.em-chat-bubble p {
+  margin: 0;
+}
+
+.em-chat-bubble--user,
+.em-chat-bubble--sent {
+  align-self: flex-end;
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.em-chat-bubble--user .em-chat-bubble__time,
+.em-chat-bubble--sent .em-chat-bubble__time {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.em-chat-bubble--ai,
+.em-chat-bubble--received {
+  align-self: flex-start;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.em-chat-bubble__time {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  margin-top: var(--space-1);
+}
+
+.em-chat-bubble--thinking {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-soft);
+}
+
+.em-chat-typing {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.em-chat-typing span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  animation: em-chat-typing-bounce 1.2s infinite ease-in-out;
+}
+.em-chat-typing span:nth-child(2) { animation-delay: 0.15s; }
+.em-chat-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes em-chat-typing-bounce {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+.em-chat-input-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+}
+
+.em-chat-input-row .em-input {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .em-chat-typing span {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .em-content {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
+}

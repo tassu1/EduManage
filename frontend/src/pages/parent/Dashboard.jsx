@@ -1,614 +1,288 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import io from 'socket.io-client';
-import './ParentPanel.css';
+import {
+  LayoutDashboard,
+  ClipboardCheck,
+  BarChart3,
+  BookOpen,
+  MessageSquare,
+  Users,
+  Baby,
+} from 'lucide-react';
+import api, { API_BASE_URL, getErrorMessage } from '../../services/api';
+import { useToasts } from '../../hooks/useToasts';
+import Sidebar from '../../components/Sidebar';
+import TopBar from '../../components/TopBar';
+import StatCard from '../../components/StatCard';
+import Card from '../../components/Card';
+import EmptyState from '../../components/EmptyState';
+import ToastStack from '../../components/ToastStack';
+import BarChart from '../../components/BarChart';
 import MessagesSection from '../components/Messages';
+import '../../styles/layout.css';
+import './ParentPanel.css';
 
-const Modal = ({ isOpen, onClose, title, children, size = "medium" }) => {
-  if (!isOpen) return null;
+const ChildSelector = ({ children: childList, selectedChild, onSelectChild }) => (
+  <div className="em-child-selector">
+    <label className="em-field__label" htmlFor="child-select"><Users size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Viewing for</label>
+    <select
+      id="child-select"
+      className="em-select"
+      value={selectedChild?._id || ''}
+      onChange={(e) => onSelectChild(childList.find((c) => c._id === e.target.value))}
+    >
+      <option value="">Select Child</option>
+      {childList.map((child) => (
+        <option key={child._id} value={child._id}>{child.name} - {child.classroom?.name || 'No Class'}</option>
+      ))}
+    </select>
+  </div>
+);
 
-  const sizeClasses = {
-    small: "modal-small",
-    medium: "modal-medium", 
-    large: "modal-large",
-    xlarge: "modal-xlarge"
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-content ${sizeClasses[size]}`} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>{title}</h3>
-          <button className="modal-close" onClick={onClose}>×</button>
-        </div>
-        <div className="modal-body">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const Toast = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [onClose]);
+const OverviewDashboard = ({ dashboardData }) => {
+  if (!dashboardData) return <div className="em-loading">Loading dashboard…</div>;
+  const { parent, children: childList, summary, recentGrades, recentMessages } = dashboardData;
 
   return (
-    <div className={`toast toast-${type}`}>
-      <span className="toast-message">{message}</span>
-      <button className="toast-close" onClick={onClose}>×</button>
-    </div>
-  );
-};
+    <>
+      <TopBar title={`Welcome, ${parent?.name}!`} subtitle="Monitoring your children's academic progress" />
 
-const ChildSelector = ({ children, selectedChild, onSelectChild }) => {
-  return (
-    <div className="child-selector">
-      <label>👨‍👩‍👧‍👦 Viewing for:</label>
-      <select 
-        value={selectedChild?._id || ''} 
-        onChange={(e) => {
-          const child = children.find(c => c._id === e.target.value);
-          onSelectChild(child);
-        }}
-        className="child-dropdown"
-      >
-        <option value="">Select Child</option>
-        {children.map(child => (
-          <option key={child._id} value={child._id}>
-            {child.name} - {child.classroom?.name || 'No Class'}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-};
-
-
-const ParentDashboard = ({ dashboardData, selectedChild, showToast }) => {
-  if (!dashboardData) {
-    return (
-      <div className="loading-state">
-        <div className="spinner"></div>
-        <p>Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  const { parent, children, summary, recentGrades, recentMessages } = dashboardData;
-
-  return (
-    <div className="dashboard-content">
-
-      <div className="welcome-section">
-        <h2>👨‍👩‍👧‍👦 Welcome, {parent?.name}!</h2>
-        <p>Monitoring your children's academic progress</p>
-      </div>
-
-      <div className="children-overview">
-        <h3>👶 My Children</h3>
-        <div className="children-grid">
-          {children?.map(child => (
-            <div key={child._id} className="child-card">
-              <div className="child-avatar">
-                {child.name?.charAt(0) || 'C'}
-              </div>
-              <div className="child-info">
-                <h4>{child.name}</h4>
-                <p>{child.classroom?.name || 'No Class Assigned'}</p>
-                <div className="child-stats">
-                  <span className="stat">📊 Class: {child.classroom?.name}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="stats-grid">
-        <div className="stat-card primary">
-          <div className="stat-content">
-            <div className="stat-icon">📊</div>
-            <div className="stat-info">
-              <h3>Overall Average</h3>
-              <div className="stat-number">{summary?.overallAverage || 'N/A'}</div>
-              <div className="stat-desc">All Children</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card success">
-          <div className="stat-content">
-            <div className="stat-icon">✅</div>
-            <div className="stat-info">
-              <h3>Attendance Rate</h3>
-              <div className="stat-number">{summary?.attendanceRate || 'N/A'}</div>
-              <div className="stat-desc">This Month</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card warning">
-          <div className="stat-content">
-            <div className="stat-icon">📚</div>
-            <div className="stat-info">
-              <h3>Pending Homework</h3>
-              <div className="stat-number">{summary?.pendingHomework || 0}</div>
-              <div className="stat-desc">Assignments</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card info">
-          <div className="stat-content">
-            <div className="stat-icon">💬</div>
-            <div className="stat-info">
-              <h3>Unread Messages</h3>
-              <div className="stat-number">{summary?.unreadMessages || 0}</div>
-              <div className="stat-desc">From Teachers</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="overview-grid">
-
-        <div className="overview-card">
-          <div className="card-header">
-            <h3>📈 Recent Grades</h3>
-          </div>
-          <div className="card-content">
-            {!recentGrades || recentGrades.length === 0 ? (
-              <div className="empty-state">No recent grades</div>
-            ) : (
-              recentGrades.map((grade, index) => (
-                <div key={index} className="grade-item">
-                  <div className="grade-subject">
-                    <strong>{grade.childName}</strong>
-                    <span>{grade.subject} - {grade.examTitle}</span>
-                  </div>
-                  <div className={`grade-score ${grade.percentage >= 80 ? 'success' : grade.percentage >= 60 ? 'warning' : 'danger'}`}>
-                    {grade.percentage}%
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="overview-card">
-          <div className="card-header">
-            <h3>💬 Recent Messages</h3>
-          </div>
-          <div className="card-content">
-            {!recentMessages || recentMessages.length === 0 ? (
-              <div className="empty-state">No recent messages</div>
-            ) : (
-              recentMessages.map((message, index) => (
-                <div key={index} className="message-item">
-                  <div className="message-header">
-                    <strong>{message.teacherName}</strong>
-                    <span className="message-time">
-                      {new Date(message.timestamp).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="message-preview">{message.content}</p>
-                  <small>Regarding: {message.childName}</small>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ParentAttendanceSection = ({ attendanceData, selectedChild, showToast }) => {
-  if (!attendanceData) {
-    return (
-      <div className="loading-state">
-        <div className="spinner"></div>
-        <p>Loading attendance data...</p>
-      </div>
-    );
-  }
-
-  const { child, attendanceRecords } = attendanceData;
-
-  const calculateSummary = () => {
-    const present = attendanceRecords?.filter(a => a.status === 'present').length || 0;
-    const absent = attendanceRecords?.filter(a => a.status === 'absent').length || 0;
-    const total = attendanceRecords?.length || 0;
-    const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
-
-    return { present, absent, total, percentage };
-  };
-
-  const summary = calculateSummary();
-
-  return (
-    <div className="tab-content">
-      <div className="tab-header">
-        <h2>📊 Attendance - {child || 'Child'}</h2>
-        <div className="header-actions">
-          <button className="btn btn-secondary">
-            📅 This Month
-          </button>
-        </div>
-      </div>
-
-      <div className="attendance-content">
-
-        <div className="attendance-hero">
-          <div className="attendance-overview">
-            <h3>Overall Attendance</h3>
-            <div className="attendance-stats-grid">
-              <div className="attendance-stat-card present">
-                <div className="stat-icon-large">✅</div>
-                <div className="stat-value-large">{summary.present}</div>
-                <div className="stat-label-large">Present</div>
-              </div>
-              <div className="attendance-stat-card absent">
-                <div className="stat-icon-large">❌</div>
-                <div className="stat-value-large">{summary.absent}</div>
-                <div className="stat-label-large">Absent</div>
-              </div>
-              <div className="attendance-stat-card total">
-                <div className="stat-icon-large">📊</div>
-                <div className="stat-value-large">{summary.total}</div>
-                <div className="stat-label-large">Total</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="attendance-progress">
-            <h3>Attendance Rate</h3>
-            <div className="progress-chart">
-              <div className="progress-item">
-                <span className="progress-label">Present</span>
-                <div className="progress-bar-container">
-                  <div 
-                    className="progress-bar present" 
-                    style={{ width: `${summary.percentage}%` }}
-                  ></div>
-                </div>
-                <span className="progress-value">{summary.percentage}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="attendance-records">
-          <h3>Recent Attendance Records</h3>
-          <div className="records-table-enhanced">
-            <div className="record-header">
-              <span>Date</span>
-              <span>Subject</span>
-              <span>Status</span>
-              <span>Teacher</span>
-            </div>
-            {attendanceRecords?.map((record, index) => (
-              <div key={index} className="record-item-enhanced">
-                <span className="record-date">
-                  {new Date(record.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </span>
-                <span className="record-subject">{record.subject}</span>
-                <span className={`record-status-badge ${record.status}`}>
-                  {record.status === 'present' ? '✅' : '❌'}
-                  {record.status}
-                </span>
-                <span className="record-teacher">{record.teacher?.name}</span>
+      <Card title="My Children" className="em-analytics-section">
+        {!childList?.length ? (
+          <EmptyState icon={Baby} title="No children linked yet" />
+        ) : (
+          <div className="em-entity-list">
+            {childList.map((child) => (
+              <div className="em-detail-row" key={child._id}>
+                <span>{child.name}</span>
+                <strong>{child.classroom?.name || 'No Class Assigned'}</strong>
               </div>
             ))}
           </div>
-        </div>
+        )}
+      </Card>
+
+      <div className="em-stats-grid">
+        <StatCard icon={BarChart3} label="Overall Average" value={summary?.overallAverage || 'N/A'} />
+        <StatCard icon={ClipboardCheck} label="Attendance Rate" value={summary?.attendanceRate || 'N/A'} tone="success" />
+        <StatCard icon={BookOpen} label="Pending Homework" value={summary?.pendingHomework || 0} tone="info" />
+        <StatCard icon={MessageSquare} label="Unread Messages" value={summary?.unreadMessages || 0} />
       </div>
-    </div>
+
+      <div className="em-form-grid" style={{ alignItems: 'start' }}>
+        <Card title="Recent Grades">
+          {!recentGrades?.length ? (
+            <EmptyState title="No recent grades" />
+          ) : (
+            recentGrades.map((grade, index) => (
+              <div className="em-detail-row" key={index}>
+                <span>{grade.childName} · {grade.subject} - {grade.examTitle}</span>
+                <strong>{grade.percentage}%</strong>
+              </div>
+            ))
+          )}
+        </Card>
+
+        <Card title="Recent Messages">
+          {!recentMessages?.length ? (
+            <EmptyState title="No recent messages" />
+          ) : (
+            recentMessages.map((message, index) => (
+              <div className="em-detail-row" key={index}>
+                <span>{message.teacherName} · re: {message.childName} — {message.content}</span>
+                <strong>{new Date(message.timestamp).toLocaleDateString()}</strong>
+              </div>
+            ))
+          )}
+        </Card>
+      </div>
+    </>
   );
 };
 
+const AttendanceSection = ({ attendanceData }) => {
+  if (!attendanceData) return <div className="em-loading">Loading attendance data…</div>;
+  const { child, attendanceRecords } = attendanceData;
+  const present = attendanceRecords?.filter((a) => a.status === 'present').length || 0;
+  const absent = attendanceRecords?.filter((a) => a.status === 'absent').length || 0;
+  const total = attendanceRecords?.length || 0;
+  const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+  const statusTone = { present: 'success', absent: 'danger' };
 
-const ParentGradesSection = ({ gradesData, selectedChild, showToast }) => {
-  if (!gradesData) {
-    return (
-      <div className="loading-state">
-        <div className="spinner"></div>
-        <p>Loading grades data...</p>
+  return (
+    <>
+      <TopBar title={`Attendance — ${child || 'Child'}`} />
+
+      <div className="em-stats-grid">
+        <StatCard icon={ClipboardCheck} label="Present" value={present} tone="success" />
+        <StatCard label="Absent" value={absent} tone="danger" />
+        <StatCard label="Total" value={total} />
       </div>
-    );
-  }
 
+      <Card title="Attendance Rate" className="em-analytics-section">
+        <BarChart data={[{ label: 'Present', value: percentage }, { label: 'Absent', value: 100 - percentage }]} unit="%" />
+      </Card>
+
+      <Card title="Recent Attendance Records">
+        {!attendanceRecords?.length ? (
+          <EmptyState title="No attendance records yet" />
+        ) : (
+          <div className="em-table-wrap">
+            <table className="em-table">
+              <thead><tr><th>Date</th><th>Subject</th><th>Status</th><th>Teacher</th></tr></thead>
+              <tbody>
+                {attendanceRecords.map((record, index) => (
+                  <tr key={index}>
+                    <td>{new Date(record.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
+                    <td>{record.subject}</td>
+                    <td><span className={`em-badge em-badge--${statusTone[record.status] || 'default'}`}>{record.status}</span></td>
+                    <td>{record.teacher?.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </>
+  );
+};
+
+const gradeSubjectAverages = (grades) => {
+  const map = {};
+  (grades || []).forEach((g) => {
+    if (!map[g.subject]) map[g.subject] = { subject: g.subject, total: 0, count: 0, highest: 0, lowest: 100 };
+    const s = map[g.subject];
+    s.total += g.percentage;
+    s.count += 1;
+    s.highest = Math.max(s.highest, g.percentage);
+    s.lowest = Math.min(s.lowest, g.percentage);
+  });
+  return Object.values(map).map((s) => ({ ...s, average: s.total / s.count }));
+};
+
+const GradesSection = ({ gradesData }) => {
+  if (!gradesData) return <div className="em-loading">Loading grades data…</div>;
   const { child, grades } = gradesData;
-
-  const calculateSubjectAverages = () => {
-    const subjectMap = {};
-    
-    grades?.forEach(grade => {
-      if (!subjectMap[grade.subject]) {
-        subjectMap[grade.subject] = {
-          subject: grade.subject,
-          totalPercentage: 0,
-          count: 0,
-          highestScore: 0,
-          lowestScore: 100
-        };
-      }
-      
-      subjectMap[grade.subject].totalPercentage += grade.percentage;
-      subjectMap[grade.subject].count++;
-      
-      if (grade.percentage > subjectMap[grade.subject].highestScore) {
-        subjectMap[grade.subject].highestScore = grade.percentage;
-      }
-      if (grade.percentage < subjectMap[grade.subject].lowestScore) {
-        subjectMap[grade.subject].lowestScore = grade.percentage;
-      }
-    });
-
-    return Object.values(subjectMap).map(subject => ({
-      ...subject,
-      averagePercentage: subject.totalPercentage / subject.count
-    }));
-  };
-
-  const subjectAverages = calculateSubjectAverages();
-  const overallAverage = subjectAverages.length > 0 
-    ? (subjectAverages.reduce((sum, subject) => sum + subject.averagePercentage, 0) / subjectAverages.length).toFixed(1)
+  const subjectAverages = gradeSubjectAverages(grades);
+  const overallAverage = subjectAverages.length
+    ? (subjectAverages.reduce((sum, s) => sum + s.average, 0) / subjectAverages.length).toFixed(1)
     : 0;
 
   return (
-    <div className="tab-content">
-      <div className="tab-header">
-        <h2>🎯 Academic Performance - {child || 'Child'}</h2>
-        <div className="header-actions">
-          <span className="academic-info">
-            Overall Average: {overallAverage}%
-          </span>
-        </div>
+    <>
+      <TopBar title={`Academic Performance — ${child || 'Child'}`} subtitle={`Overall Average: ${overallAverage}%`} />
+
+      <div className="em-stats-grid">
+        <StatCard icon={BarChart3} label="Overall Average" value={`${overallAverage}%`} />
+        <StatCard label="Total Exams" value={grades?.length || 0} tone="info" />
+        <StatCard label="Subjects" value={subjectAverages.length} />
       </div>
 
-      <div className="grades-content">
+      <Card title="Subject-wise Averages" className="em-analytics-section">
+        <BarChart data={subjectAverages.map((s) => ({ label: s.subject, value: Math.round(s.average * 10) / 10 }))} unit="%" />
+      </Card>
 
-        <div className="grades-hero">
-          <div className="overall-performance">
-            <div className="performance-score">
-              <div 
-                className="score-circle" 
-                style={{ 
-                  background: `conic-gradient(var(--primary) ${parseFloat(overallAverage) * 3.6}deg, #e2e8f0 0deg)` 
-                }}
-              >
-                <span className="score-value">{overallAverage}%</span>
-              </div>
-              <h3>Overall Average</h3>
-              <p>Based on {grades?.length || 0} exams across {subjectAverages.length} subjects</p>
-            </div>
-          </div>
+      <div className="em-entity-list" style={{ marginBottom: 'var(--space-5)' }}>
+        {subjectAverages.map((subject, index) => (
+          <Card key={index} title={subject.subject}>
+            <div className="em-detail-row"><span>Average</span><strong>{subject.average.toFixed(1)}%</strong></div>
+            <div className="em-detail-row"><span>Highest</span><strong>{subject.highest}%</strong></div>
+            <div className="em-detail-row"><span>Lowest</span><strong>{subject.lowest}%</strong></div>
+            <div className="em-detail-row"><span>Exams</span><strong>{subject.count}</strong></div>
+          </Card>
+        ))}
+      </div>
 
-
-          <div className="subjects-performance-section">
-            <h3>📚 Subject-wise Analysis</h3>
-            <div className="subjects-performance-grid">
-              {subjectAverages.map((subject, index) => (
-                <div key={index} className="subject-performance-card">
-                  <div className="subject-header">
-                    <div className="subject-title">
-                      <h4>{subject.subject}</h4>
-                      <span className="total-exams">{subject.count} exam(s)</span>
-                    </div>
-                    <span className={`performance-indicator ${
-                      subject.averagePercentage >= 90 ? 'excellent' :
-                      subject.averagePercentage >= 80 ? 'good' :
-                      subject.averagePercentage >= 70 ? 'average' : 'poor'
-                    }`}>
-                      {subject.averagePercentage.toFixed(1)}%
-                    </span>
-                  </div>
-
-                  <div className="subject-stats-grid">
-                    <div className="subject-stat">
-                      <span className="value">{subject.highestScore}%</span>
-                      <span className="label">Highest</span>
-                    </div>
-                    <div className="subject-stat">
-                      <span className="value">{subject.lowestScore}%</span>
-                      <span className="label">Lowest</span>
-                    </div>
-                    <div className="subject-stat">
-                      <span className="value">{subject.count}</span>
-                      <span className="label">Exams</span>
-                    </div>
-                  </div>
-                </div>
+      <Card title={`Detailed Grade History (${grades?.length || 0} records)`}>
+        <div className="em-table-wrap">
+          <table className="em-table">
+            <thead><tr><th>Subject</th><th>Exam</th><th>Type</th><th>Marks</th><th>%</th><th>Grade</th><th>Date</th></tr></thead>
+            <tbody>
+              {(grades || []).map((grade, index) => (
+                <tr key={grade._id || index}>
+                  <td>{grade.subject}</td>
+                  <td>{grade.examTitle}</td>
+                  <td>{grade.examType}</td>
+                  <td>{grade.marksObtained}/{grade.totalMarks}</td>
+                  <td>{grade.percentage}%</td>
+                  <td>{grade.grade}</td>
+                  <td>{new Date(grade.createdAt).toLocaleDateString()}</td>
+                </tr>
               ))}
-            </div>
-          </div>
+            </tbody>
+          </table>
         </div>
-
-        <div className="grades-table-enhanced">
-          <div className="table-header-section">
-            <h3>📋 Detailed Grade History</h3>
-            <div className="table-actions">
-              <span className="total-records">
-                Showing {grades?.length || 0} grade records
-              </span>
-            </div>
-          </div>
-          
-          <div className="grades-table-container">
-            <div className="grades-header">
-              <span>Subject</span>
-              <span>Exam</span>
-              <span>Type</span>
-              <span>Marks</span>
-              <span>Percentage</span>
-              <span>Grade</span>
-              <span>Date</span>
-            </div>
-            
-            {grades?.map((grade, index) => (
-              <div key={grade._id || index} className="grade-row-enhanced">
-                <span className="grade-subject">
-                  <span className="subject-icon">📘</span>
-                  {grade.subject}
-                </span>
-                <span className="grade-exam">{grade.examTitle}</span>
-                <span className="grade-type">
-                  <span className={`type-badge ${grade.examType}`}>
-                    {grade.examType}
-                  </span>
-                </span>
-                <span className="grade-marks">
-                  {grade.marksObtained}/{grade.totalMarks}
-                </span>
-                <span className="grade-percentage">
-                  <div className="percentage-bar">
-                    <div 
-                      className="percentage-fill"
-                      style={{ width: `${grade.percentage}%` }}
-                    ></div>
-                    <span>{grade.percentage}%</span>
-                  </div>
-                </span>
-                <span className={`grade-badge ${grade.grade}`}>
-                  {grade.grade}
-                </span>
-                <span className="grade-date">
-                  {new Date(grade.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+      </Card>
+    </>
   );
 };
 
+const getHomeworkStatus = (dueDate) => {
+  const daysDiff = Math.ceil((new Date(dueDate) - new Date()) / (1000 * 60 * 60 * 24));
+  if (daysDiff < 0) return { label: 'Overdue', tone: 'danger' };
+  if (daysDiff <= 1) return { label: 'Due Soon', tone: 'default' };
+  if (daysDiff <= 3) return { label: 'Upcoming', tone: 'info' };
+  return { label: 'Active', tone: 'success' };
+};
 
-const ParentHomeworkSection = ({ homeworkData, selectedChild, showToast }) => {
-  if (!homeworkData) {
-    return (
-      <div className="loading-state">
-        <div className="spinner"></div>
-        <p>Loading homework data...</p>
-      </div>
-    );
-  }
-
+const HomeworkSection = ({ homeworkData }) => {
+  if (!homeworkData) return <div className="em-loading">Loading homework data…</div>;
   const { child, homework } = homeworkData;
-
-  const getHomeworkStatus = (dueDate) => {
-    const now = new Date();
-    const due = new Date(dueDate);
-    const timeDiff = due - now;
-    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-    if (timeDiff < 0) return { status: 'overdue', label: 'Overdue', color: 'danger' };
-    if (daysDiff <= 1) return { status: 'urgent', label: 'Due Soon', color: 'warning' };
-    if (daysDiff <= 3) return { status: 'upcoming', label: 'Upcoming', color: 'info' };
-    return { status: 'active', label: 'Active', color: 'success' };
-  };
+  const upcoming = homework?.filter((hw) => getHomeworkStatus(hw.dueDate).label !== 'Overdue').length || 0;
+  const overdue = homework?.filter((hw) => getHomeworkStatus(hw.dueDate).label === 'Overdue').length || 0;
 
   return (
-    <div className="tab-content">
-      <div className="tab-header">
-        <h2>📚 Homework - {child || 'Child'}</h2>
-        <div className="header-actions">
-          <button className="btn btn-secondary">
-            🔄 Refresh
-          </button>
-        </div>
-      </div>
+    <>
+      <TopBar title={`Homework — ${child || 'Child'}`} />
+      <p className="em-field__hint" style={{ marginBottom: 'var(--space-4)' }}>
+        Total: {homework?.length || 0} · Upcoming: {upcoming} · Overdue: {overdue}
+      </p>
 
-      <div className="homework-content">
-        <div className="homework-summary">
-          <div className="summary-stats">
-            <span>Total: {homework?.length || 0}</span>
-            <span>Upcoming: {homework?.filter(hw => getHomeworkStatus(hw.dueDate).status !== 'overdue').length || 0}</span>
-            <span>Overdue: {homework?.filter(hw => getHomeworkStatus(hw.dueDate).status === 'overdue').length || 0}</span>
-          </div>
-        </div>
-
-        <div className="homework-grid">
-          {homework?.map(hw => {
+      {!homework?.length ? (
+        <EmptyState icon={BookOpen} title="No Homework" description="No homework assigned for this child." />
+      ) : (
+        <div className="em-entity-list">
+          {homework.map((hw) => {
             const status = getHomeworkStatus(hw.dueDate);
-            
             return (
-              <div key={hw._id} className="homework-card">
-                <div className="homework-header">
-                  <div className="homework-title-section">
-                    <h3>{hw.title}</h3>
-                    <span className={`status-badge ${status.status}`}>
-                      {status.label}
-                    </span>
-                  </div>
-                  <div className="homework-points">
-                    <span className="points-badge">{hw.totalPoints} pts</span>
-                  </div>
-                </div>
-
-                <div className="homework-meta">
-                  <div className="meta-item">
-                    <span className="meta-icon">📚</span>
-                    <span>{hw.subject}</span>
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-icon">👨‍🏫</span>
-                    <span>{hw.teacher?.name}</span>
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-icon">⏰</span>
-                    <span className={status.status === 'urgent' || status.status === 'overdue' ? 'text-warning' : ''}>
-                      Due: {new Date(hw.dueDate).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                {hw.description && (
-                  <div className="homework-description">
-                    <p>{hw.description}</p>
-                  </div>
-                )}
-
-                <div className="homework-actions">
-                  <button 
-                    className="btn btn-info btn-sm"
-                    onClick={() => showToast(`Homework details: ${hw.title}`, 'info')}
-                  >
-                    👁️ View Details
-                  </button>
-                  <span className="submission-status">
-                    {hw.isSubmitted ? '✅ Submitted' : '⏳ Pending'}
+              <Card
+                key={hw._id}
+                title={hw.title}
+                actions={
+                  <span className={`em-badge em-badge--${hw.isSubmitted ? 'success' : 'default'}`}>
+                    {hw.isSubmitted ? 'Submitted' : 'Pending'}
                   </span>
+                }
+              >
+                <div className="em-detail-row">
+                  <span>Status</span>
+                  <strong><span className={`em-badge em-badge--${status.tone}`}>{status.label}</span> · {hw.totalPoints} pts</strong>
                 </div>
-              </div>
+                <div className="em-detail-row"><span>Subject</span><strong>{hw.subject}</strong></div>
+                <div className="em-detail-row"><span>Teacher</span><strong>{hw.teacher?.name}</strong></div>
+                <div className="em-detail-row"><span>Due</span><strong>{new Date(hw.dueDate).toLocaleString()}</strong></div>
+                {hw.description && <div className="em-detail-row"><span>Description</span><strong>{hw.description}</strong></div>}
+              </Card>
             );
           })}
         </div>
-
-        {(!homework || homework.length === 0) && (
-          <div className="empty-state">
-            <div className="empty-icon">📚</div>
-            <h3>No Homework</h3>
-            <p>No homework assigned for this child.</p>
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 
+/* =========================================================================
+   Main component
+   ========================================================================= */
+
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'attendance', label: 'Attendance', icon: ClipboardCheck },
+  { id: 'grades', label: 'Grades', icon: BarChart3 },
+  { id: 'homework', label: 'Homework', icon: BookOpen },
+  { id: 'messages', label: 'Messages', icon: MessageSquare },
+];
 
 const ParentPanel = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -619,40 +293,17 @@ const ParentPanel = () => {
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [toasts, setToasts] = useState([]);
-
-   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const BASE_URL = `${API}/api/parent`;
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    };
-  };
-
-  const showToast = (message, type = 'success') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-  };
-
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  };
+  const { toasts, showToast, removeToast } = useToasts();
 
   const fetchChildren = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/children`, getAuthHeaders());
-      setChildren(response.data.children || []);
-      if (response.data.children && response.data.children.length > 0) {
-        setSelectedChild(response.data.children[0]);
-      }
-      return response.data.children || [];
-    } catch (error) {
-      showToast('Failed to load children data', 'error');
+      const response = await api.get('/api/parent/children');
+      const list = response.data.children || [];
+      setChildren(list);
+      if (list.length > 0) setSelectedChild(list[0]);
+      return list;
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Failed to load children data'), 'error');
       return [];
     }
   };
@@ -660,10 +311,10 @@ const ParentPanel = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BASE_URL}/dashboard`, getAuthHeaders());
+      const response = await api.get('/api/parent/dashboard');
       setDashboardData(response.data);
-    } catch (error) {
-      showToast('Failed to load dashboard data', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Failed to load dashboard data'), 'error');
     } finally {
       setLoading(false);
     }
@@ -671,16 +322,12 @@ const ParentPanel = () => {
 
   const fetchAttendance = async () => {
     if (!selectedChild) return;
-    
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${BASE_URL}/attendance/${selectedChild._id}`,
-        getAuthHeaders()
-      );
+      const response = await api.get(`/api/parent/attendance/${selectedChild._id}`);
       setAttendanceData(response.data);
-    } catch (error) {
-      showToast('Failed to load attendance data', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Failed to load attendance data'), 'error');
     } finally {
       setLoading(false);
     }
@@ -688,16 +335,12 @@ const ParentPanel = () => {
 
   const fetchGrades = async () => {
     if (!selectedChild) return;
-    
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${BASE_URL}/grades/${selectedChild._id}`,
-        getAuthHeaders()
-      );
+      const response = await api.get(`/api/parent/grades/${selectedChild._id}`);
       setGradesData(response.data);
-    } catch (error) {
-      showToast('Failed to load grades data', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Failed to load grades data'), 'error');
     } finally {
       setLoading(false);
     }
@@ -705,243 +348,110 @@ const ParentPanel = () => {
 
   const fetchHomework = async () => {
     if (!selectedChild) return;
-    
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${BASE_URL}/homework/${selectedChild._id}`,
-        getAuthHeaders()
-      );
+      const response = await api.get(`/api/parent/homework/${selectedChild._id}`);
       setHomeworkData(response.data);
-    } catch (error) {
-      showToast('Failed to load homework data', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Failed to load homework data'), 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  // Preserved exactly: only listens for 'new-chat-message', unlike the
+  // other three roles which also handle 'message-error' — a genuine
+  // difference in the original, not an oversight introduced here.
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
-    
     if (!token || !userId) {
       showToast('Please login again', 'error');
       return;
     }
-
-    const socket = io(API);
+    const socket = io(API_BASE_URL);
     socket.emit('join-user', userId);
     window.socket = socket;
-
-    socket.on('new-chat-message', (data) => {
-      showToast(`New message from ${data.from.name}`, 'info');
-    });
-
-    return () => {
-      socket.disconnect();
-    };
+    socket.on('new-chat-message', (data) => showToast(`New message from ${data.from.name}`, 'info'));
+    return () => socket.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
 
   useEffect(() => {
     const initializeData = async () => {
       const childrenList = await fetchChildren();
-      if (childrenList.length > 0) {
-        await fetchDashboardData();
-      }
+      if (childrenList.length > 0) await fetchDashboardData();
     };
-
     initializeData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!selectedChild) return;
-
-    switch (activeTab) {
-      case 'dashboard':
-        fetchDashboardData();
-        break;
-      case 'attendance':
-        fetchAttendance();
-        break;
-      case 'grades':
-        fetchGrades();
-        break;
-      case 'homework':
-        fetchHomework();
-        break;
-    }
+    if (activeTab === 'dashboard') fetchDashboardData();
+    else if (activeTab === 'attendance') fetchAttendance();
+    else if (activeTab === 'grades') fetchGrades();
+    else if (activeTab === 'homework') fetchHomework();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, selectedChild]);
 
+  const goTo = (tab) => setActiveTab(tab);
+
   const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading...</p>
-        </div>
-      );
-    }
+    if (loading) return <div className="em-loading">Loading…</div>;
 
     if (children.length === 0) {
-      return (
-        <div className="empty-state">
-          <div className="empty-icon">👶</div>
-          <h3>No Children Linked</h3>
-          <p>Please contact your school administrator to link your children's accounts.</p>
-        </div>
-      );
+      return <EmptyState icon={Baby} title="No Children Linked" description="Please contact your school administrator to link your children's accounts." />;
     }
 
+    // Preserved exactly from the original: setting state during render to
+    // auto-select the first child. Not converted to a useEffect, since
+    // that would change the render timing of this fallback state.
     if (!selectedChild && children.length > 0) {
       setSelectedChild(children[0]);
-      return (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Selecting child...</p>
-        </div>
-      );
+      return <div className="em-loading">Selecting child…</div>;
     }
 
     switch (activeTab) {
       case 'dashboard':
-        return <ParentDashboard dashboardData={dashboardData} selectedChild={selectedChild} showToast={showToast} />;
-      
+        return <OverviewDashboard dashboardData={dashboardData} />;
       case 'attendance':
-        return <ParentAttendanceSection attendanceData={attendanceData} selectedChild={selectedChild} showToast={showToast} />;
-      
+        return <AttendanceSection attendanceData={attendanceData} />;
       case 'grades':
-        return <ParentGradesSection gradesData={gradesData} selectedChild={selectedChild} showToast={showToast} />;
-      
+        return <GradesSection gradesData={gradesData} />;
       case 'homework':
-        return <ParentHomeworkSection homeworkData={homeworkData} selectedChild={selectedChild} showToast={showToast} />;
-      
+        return <HomeworkSection homeworkData={homeworkData} showToast={showToast} />;
       case 'messages':
-        return (
-        <div style={{ 
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          
-        }}>
-         <MessagesSection 
-  showToast={showToast}
-  userRole="parent"
-/>
-        </div>
-      );
-      
+        // Not yet redesigned — Messaging is its own phase. Renders as-is for now.
+        return <MessagesSection showToast={showToast} userRole="parent" />;
       default:
-        return <ParentDashboard dashboardData={dashboardData} selectedChild={selectedChild} showToast={showToast} />;
+        return <OverviewDashboard dashboardData={dashboardData} />;
     }
   };
 
   return (
-    <div className="parent-panel">
+    <div className="em-app-shell">
+      <Sidebar
+        items={NAV_ITEMS}
+        activeId={activeTab}
+        onSelect={goTo}
+        roleLabel={dashboardData?.parent?.name || 'Parent'}
+        onLogout={() => {
+          localStorage.clear();
+          window.location.reload();
+        }}
+      />
 
-      <header className="parent-header">
-        <div className="header-left">
-          <h1>👨‍👩‍👧‍👦 EduManage - Parent Portal</h1>
-          <p>Monitor your children's academic journey</p>
+      <ToastStack toasts={toasts} onDismiss={removeToast} />
+
+      <main className="em-main">
+        <div className={activeTab === 'messages' ? '' : 'em-content'}>
+          {children.length > 0 && (
+            <ChildSelector children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />
+          )}
+          {renderContent()}
         </div>
-        <div className="header-actions">
-          <button className="logout-btn" onClick={() => {
-            localStorage.clear();
-            window.location.reload();
-          }}>
-             Logout
-          </button>
-        </div>
-      </header>
-
-      <div className="parent-layout">
-
-        <nav className="parent-sidebar">
-          <div className="sidebar-content">
-            <div className="sidebar-header">
-              <div className="parent-profile">
-                <div className="profile-avatar">
-                  {dashboardData?.parent?.name?.charAt(0) || 'P'}
-                </div>
-                <div className="profile-info">
-                  <h3>{dashboardData?.parent?.name || 'Parent'}</h3>
-                  <p>Parent Account</p>
-                </div>
-              </div>
-            </div>
-
-            {children.length > 0 && (
-              <div className="child-selector-sidebar">
-                <ChildSelector
-                  children={children}
-                  selectedChild={selectedChild}
-                  onSelectChild={setSelectedChild}
-                />
-              </div>
-            )}
-
-            <div className="sidebar-nav">
-              <button 
-                className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-                onClick={() => setActiveTab('dashboard')}
-              >
-                <span className="nav-icon">📊</span>
-                <span className="nav-text">Dashboard</span>
-              </button>
-              
-              <button 
-                className={`nav-item ${activeTab === 'attendance' ? 'active' : ''}`}
-                onClick={() => setActiveTab('attendance')}
-              >
-                <span className="nav-icon">✅</span>
-                <span className="nav-text">Attendance</span>
-              </button>
-              
-              <button 
-                className={`nav-item ${activeTab === 'grades' ? 'active' : ''}`}
-                onClick={() => setActiveTab('grades')}
-              >
-                <span className="nav-icon">🎯</span>
-                <span className="nav-text">Grades</span>
-              </button>
-              
-              <button 
-                className={`nav-item ${activeTab === 'homework' ? 'active' : ''}`}
-                onClick={() => setActiveTab('homework')}
-              >
-                <span className="nav-icon">📚</span>
-                <span className="nav-text">Homework</span>
-              </button>
-              
-              <button 
-                className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`}
-                onClick={() => setActiveTab('messages')}
-              >
-                <span className="nav-icon">💬</span>
-                <span className="nav-text">Messages</span>
-              </button>
-            </div>
-          </div>
-        </nav>
-
-        <main className="parent-main">
-          <div className="main-content">
-            {renderContent()}
-          </div>
-        </main>
-      </div>
-
-      <div className="toast-container">
-        {toasts.map(toast => (
-          <Toast
-            key={toast.id}
-            message={toast.message}
-            type={toast.type}
-            onClose={() => removeToast(toast.id)}
-          />
-        ))}
-      </div>
+      </main>
     </div>
   );
 };

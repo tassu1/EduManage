@@ -1,6 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import {
+  LayoutDashboard,
+  School,
+  PlusCircle,
+  UserPlus,
+  BarChart3,
+  RefreshCw,
+  ArrowLeft,
+  Pencil,
+  Trash2,
+  Building2,
+  Users,
+  GraduationCap,
+  UserCog,
+  Briefcase,
+} from 'lucide-react';
+import api, { getErrorMessage } from '../../services/api';
+import Sidebar from '../../components/Sidebar';
+import TopBar from '../../components/TopBar';
+import StatCard from '../../components/StatCard';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import FormField from '../../components/FormField';
+import EmptyState from '../../components/EmptyState';
+import Toast from '../../components/Toast';
+import BarChart from '../../components/BarChart';
+import '../../styles/layout.css';
 import './SuperAdmin.css';
+
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'schools', label: 'Schools', icon: School },
+  { id: 'create-school', label: 'Create School', icon: PlusCircle },
+  { id: 'create-admin', label: 'Create Admin', icon: UserPlus },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+];
+
+const EMPTY_FEES = { tuition: '', transportation: '', library: '', sports: '', other: '' };
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -12,59 +48,36 @@ const SuperAdminDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-    const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-  
   const [schoolForm, setSchoolForm] = useState({
     name: '',
     code: '',
     address: '',
-    feesStructure: {
-      tuition: '',
-      transportation: '',
-      library: '',
-      sports: '',
-      other: ''
-    }
+    feesStructure: { ...EMPTY_FEES },
   });
 
   const [editSchoolForm, setEditSchoolForm] = useState({
     name: '',
     newcode: '',
     address: '',
-    feesStructure: {
-      tuition: '',
-      transportation: '',
-      library: '',
-      sports: '',
-      other: ''
-    }
+    feesStructure: { ...EMPTY_FEES },
   });
 
   const [adminForm, setAdminForm] = useState({
     name: '',
     email: '',
     password: '',
-    schoolCode: ''
+    schoolCode: '',
   });
 
-  
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    };
-  };
+  // ---- Data fetching — same endpoints, same payloads as before, now via the shared `api` client ----
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/api/super/dashboard`, getAuthHeaders());
+      const response = await api.get('/api/super/dashboard');
       setDashboardData(response.data);
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch dashboard data');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to fetch dashboard data'));
     } finally {
       setLoading(false);
     }
@@ -72,20 +85,20 @@ const SuperAdminDashboard = () => {
 
   const fetchSchools = async () => {
     try {
-      const response = await axios.get(`${API}/api/super/schools`, getAuthHeaders());
+      const response = await api.get('/api/super/schools');
       setSchools(response.data.schools || []);
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch schools');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to fetch schools'));
     }
   };
 
   const fetchSchoolAnalytics = async (schoolId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/api/super/school/${schoolId}/analytics`, getAuthHeaders());
+      const response = await api.get(`/api/super/school/${schoolId}/analytics`);
       setSchoolAnalytics(response.data);
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch school analytics');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to fetch school analytics'));
     } finally {
       setLoading(false);
     }
@@ -96,35 +109,21 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       setError('');
-   
+
       const feesStructure = {};
-      Object.keys(schoolForm.feesStructure).forEach(key => {
+      Object.keys(schoolForm.feesStructure).forEach((key) => {
         feesStructure[key] = parseFloat(schoolForm.feesStructure[key]) || 0;
       });
 
-      const schoolData = {
-        ...schoolForm,
-        feesStructure
-      };
+      const schoolData = { ...schoolForm, feesStructure };
 
-      await axios.post(`${API}/api/super/school`, schoolData, getAuthHeaders());
-      setSuccess('🏫 School created successfully!');
-      setSchoolForm({
-        name: '',
-        code: '',
-        address: '',
-        feesStructure: {
-          tuition: '',
-          transportation: '',
-          library: '',
-          sports: '',
-          other: ''
-        }
-      });
+      await api.post('/api/super/school', schoolData);
+      setSuccess('School created successfully!');
+      setSchoolForm({ name: '', code: '', address: '', feesStructure: { ...EMPTY_FEES } });
       fetchSchools();
       setActiveTab('schools');
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to create school');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to create school'));
     } finally {
       setLoading(false);
     }
@@ -136,17 +135,11 @@ const SuperAdminDashboard = () => {
         name: school.name,
         newcode: school.code,
         address: school.address,
-        feesStructure: school.feesStructure || {
-          tuition: '',
-          transportation: '',
-          library: '',
-          sports: '',
-          other: ''
-        }
+        feesStructure: school.feesStructure || { ...EMPTY_FEES },
       });
       setSelectedSchool(school);
       setActiveTab('edit-school');
-    } catch (error) {
+    } catch {
       setError('Failed to load school data for editing');
     }
   };
@@ -156,24 +149,20 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       setError('');
-      
-     
+
       const feesStructure = {};
-      Object.keys(editSchoolForm.feesStructure).forEach(key => {
+      Object.keys(editSchoolForm.feesStructure).forEach((key) => {
         feesStructure[key] = parseFloat(editSchoolForm.feesStructure[key]) || 0;
       });
 
-      const updateData = {
-        ...editSchoolForm,
-        feesStructure
-      };
+      const updateData = { ...editSchoolForm, feesStructure };
 
-      await axios.put(`${API}/api/super/school/${selectedSchool.code}`, updateData, getAuthHeaders());
-      setSuccess('🏫 School updated successfully!');
+      await api.put(`/api/super/school/${selectedSchool.code}`, updateData);
+      setSuccess('School updated successfully!');
       fetchSchools();
       setActiveTab('schools');
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to update school');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to update school'));
     } finally {
       setLoading(false);
     }
@@ -183,14 +172,13 @@ const SuperAdminDashboard = () => {
     if (!window.confirm(`Are you sure you want to delete ${school.name}? This action cannot be undone.`)) {
       return;
     }
-
     try {
       setLoading(true);
-      await axios.delete(`${API}/api/super/school/${school.code}`, getAuthHeaders());
-      setSuccess('🗑️ School deleted successfully!');
+      await api.delete(`/api/super/school/${school.code}`);
+      setSuccess('School deleted successfully!');
       fetchSchools();
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to delete school');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to delete school'));
     } finally {
       setLoading(false);
     }
@@ -201,17 +189,16 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       setError('');
-      await axios.post(`${API}/api/super/create-admin`, adminForm, getAuthHeaders());
-      setSuccess('👨‍💼 School admin created successfully!');
+      await api.post('/api/super/create-admin', adminForm);
+      setSuccess('School admin created successfully!');
       setAdminForm({ name: '', email: '', password: '', schoolCode: '' });
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to create admin');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to create admin'));
     } finally {
       setLoading(false);
     }
   };
 
-  
   const handleSchoolClick = (school) => {
     setSelectedSchool(school);
     fetchSchoolAnalytics(school._id);
@@ -231,615 +218,419 @@ const SuperAdminDashboard = () => {
     setSuccess('');
   };
 
+  const goTo = (tab) => {
+    setActiveTab(tab);
+    clearMessages();
+  };
+
+  const totalFees = (fees) =>
+    Object.values(fees || {}).reduce((sum, fee) => sum + (parseFloat(fee) || 0), 0);
+
+ const feeFields = [
+  { key: "tuitionPerYear", label: "Tuition (₹)" },
+  { key: "transportPerYear", label: "Transport (₹)" },
+];
+
   return (
-    <div className="super-admin">
-      <header className="super-header">
-        <h1>🎓 EduManage Super Admin</h1>
-        <div className="user-info">
-          <span>Welcome back, Administrator</span>
-          <button className="logout-btn" onClick={() => {
-            localStorage.clear();
-            window.location.reload();
-          }}>
-          Logout
-          </button>
-        </div>
-      </header>
+    <div className="em-app-shell">
+      <Sidebar
+        items={NAV_ITEMS}
+        activeId={activeTab === 'edit-school' ? 'schools' : activeTab}
+        onSelect={goTo}
+        roleLabel="Super Admin"
+        onLogout={() => {
+          localStorage.clear();
+          window.location.reload();
+        }}
+      />
 
-      <nav className="super-nav">
-        <button 
-          className={activeTab === 'dashboard' ? 'active' : ''}
-          onClick={() => { setActiveTab('dashboard'); clearMessages(); }}
-        >
-          📊 Dashboard
-        </button>
-        <button 
-          className={activeTab === 'schools' ? 'active' : ''}
-          onClick={() => { setActiveTab('schools'); clearMessages(); }}
-        >
-          🏫 Schools
-        </button>
-        <button 
-          className={activeTab === 'create-school' ? 'active' : ''}
-          onClick={() => { setActiveTab('create-school'); clearMessages(); }}
-        >
-          ➕ Create School
-        </button>
-        <button 
-          className={activeTab === 'create-admin' ? 'active' : ''}
-          onClick={() => { setActiveTab('create-admin'); clearMessages(); }}
-        >
-          👨‍💼 Create Admin
-        </button>
-        <button 
-          className={activeTab === 'analytics' ? 'active' : ''}
-          onClick={() => { setActiveTab('analytics'); clearMessages(); }}
-        >
-          📈 Analytics
-        </button>
-      </nav>
+      <Toast type="error" message={error} onDismiss={() => setError('')} />
+      <Toast type="success" message={success} onDismiss={() => setSuccess('')} />
 
-      
-      {error && <div className="message error">{error}</div>}
-      {success && <div className="message success">{success}</div>}
+      <main className="em-main">
+        <div className="em-content">
+          {activeTab === 'dashboard' && (
+            <>
+              <TopBar title="Dashboard" subtitle="Platform-wide overview across all your schools" />
+              {loading ? (
+                <div className="em-loading">Loading dashboard data…</div>
+              ) : dashboardData ? (
+                <>
+                  <div className="em-stats-grid">
+                    <StatCard icon={Building2} label="Total Schools" value={dashboardData.totalSchools} />
+                    <StatCard icon={UserCog} label="School Admins" value={dashboardData.totalAdmins} tone="info" />
+                    <StatCard icon={Users} label="Teachers" value={dashboardData.totalTeachers} tone="success" />
+                    <StatCard icon={GraduationCap} label="Students" value={dashboardData.totalStudents} />
+                  </div>
 
-     
-      <main className="super-main">
-        {activeTab === 'dashboard' && (
-          <div className="dashboard-tab">
-            {loading ? (
-              <div className="loading">Loading dashboard data...</div>
-            ) : dashboardData ? (
-              <div className="dashboard-content">
-                <div className="stats-grid">
-                  <div className="stat-card primary">
-                    <div className="stat-icon">🏫</div>
-                    <div className="stat-info">
-                      <h3>Total Schools</h3>
-                      <p className="stat-number">{dashboardData.totalSchools}</p>
+                  <Card title="Quick Actions">
+                    <div className="em-quick-actions">
+                      <Button variant="primary" icon={PlusCircle} onClick={() => goTo('create-school')}>
+                        Add New School
+                      </Button>
+                      <Button icon={UserPlus} onClick={() => goTo('create-admin')}>
+                        Create School Admin
+                      </Button>
+                      <Button icon={School} onClick={() => goTo('schools')}>
+                        Manage Schools
+                      </Button>
+                      <Button icon={BarChart3} onClick={() => goTo('analytics')}>
+                        View Analytics
+                      </Button>
                     </div>
-                  </div>
-                  <div className="stat-card success">
-                    <div className="stat-icon">👨‍💼</div>
-                    <div className="stat-info">
-                      <h3>School Admins</h3>
-                      <p className="stat-number">{dashboardData.totalAdmins}</p>
-                    </div>
-                  </div>
-                  <div className="stat-card warning">
-                    <div className="stat-icon">👨‍🏫</div>
-                    <div className="stat-info">
-                      <h3>Teachers</h3>
-                      <p className="stat-number">{dashboardData.totalTeachers}</p>
-                    </div>
-                  </div>
-                  <div className="stat-card info">
-                    <div className="stat-icon">🎓</div>
-                    <div className="stat-info">
-                      <h3>Students</h3>
-                      <p className="stat-number">{dashboardData.totalStudents}</p>
-                    </div>
-                  </div>
-                </div>
-
-                
-                <div className="quick-actions">
-                  <h3>Quick Actions</h3>
-                  <div className="action-buttons">
-                    <button onClick={() => setActiveTab('create-school')} className="btn-primary">
-                      🏫 Add New School
-                    </button>
-                    <button onClick={() => setActiveTab('create-admin')} className="btn-secondary">
-                      👨‍💼 Create School Admin
-                    </button>
-                    <button onClick={() => setActiveTab('schools')} className="btn-warning">
-                      📋 Manage Schools
-                    </button>
-                    <button onClick={() => setActiveTab('analytics')} className="btn-info">
-                      📈 View Analytics
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="no-data">No dashboard data available</div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'schools' && (
-          <div className="schools-tab">
-            <div className="tab-header">
-              <h2>🏫 School Management</h2>
-              <div className="header-actions">
-                <button className="btn-secondary" onClick={fetchSchools}>
-                  🔄 Refresh
-                </button>
-                <button 
-                  className="btn-primary"
-                  onClick={() => setActiveTab('create-school')}
-                >
-                  ➕ Add School
-                </button>
-              </div>
-            </div>
-
-            <div className="schools-list">
-              {schools.length === 0 ? (
-                <div className="no-data">No schools registered yet</div>
+                  </Card>
+                </>
               ) : (
-                schools.map(school => (
-                  <div key={school._id} className="school-card">
-                    <div className="school-info">
-                      <h3>{school.name}</h3>
-                      <div className="school-details">
-                        <div className="detail-item">
-                          🏷️ <strong>Code:</strong> {school.code}
-                        </div>
-                        <div className="detail-item">
-                          📍 <strong>Address:</strong> {school.address}
-                        </div>
-                        <div className="detail-item">
-                          👨‍💼 <strong>Admin:</strong> {school.admin?.name || 'Not assigned'}
-                        </div>
-                        <div className="detail-item">
-                          💰 <strong>Total Fees:</strong> ₹{Object.values(school.feesStructure || {}).reduce((sum, fee) => sum + (parseFloat(fee) || 0), 0)}
-                        </div>
-                        <div className="detail-item">
-                          📅 <strong>Created:</strong> {new Date(school.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="school-actions">
-                      <button 
-                        className="btn-info"
-                        onClick={() => handleSchoolClick(school)}
-                      >
-                        📈 Analytics
-                      </button>
-                      <button 
-                        className="btn-warning"
-                        onClick={() => handleEditSchool(school)}
-                      >
-                        ✏️ Edit
-                      </button>
-                      <button 
-                        className="btn-danger"
-                        onClick={() => handleDeleteSchool(school)}
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </div>
-                ))
+                <EmptyState title="No dashboard data available" />
               )}
-            </div>
-          </div>
-        )}
+            </>
+          )}
 
-        {activeTab === 'create-school' && (
-          <div className="form-tab">
-            <div className="tab-header">
-              <h2>🏫 Create New School</h2>
-              <button onClick={() => setActiveTab('schools')} className="btn-secondary">
-                ← Back to Schools
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateSchool} className="super-form">
-              <div className="form-group">
-                <label>School Name</label>
-                <input
-                  type="text"
-                  value={schoolForm.name}
-                  onChange={(e) => setSchoolForm({...schoolForm, name: e.target.value})}
-                  required
-                  placeholder="Enter school name"
-                />
-              </div>
-              <div className="form-group">
-                <label>School Code</label>
-                <input
-                  type="text"
-                  value={schoolForm.code}
-                  onChange={(e) => setSchoolForm({...schoolForm, code: e.target.value})}
-                  required
-                  placeholder="Enter unique school code"
-                />
-              </div>
-              <div className="form-group">
-                <label>Address</label>
-                <textarea
-                  value={schoolForm.address}
-                  onChange={(e) => setSchoolForm({...schoolForm, address: e.target.value})}
-                  required
-                  placeholder="Enter school address"
-                  rows="3"
-                />
-              </div>
+          {activeTab === 'schools' && (
+            <>
+              <TopBar
+                title="School Management"
+                actions={
+                  <>
+                    <Button icon={RefreshCw} onClick={fetchSchools}>
+                      Refresh
+                    </Button>
+                    <Button variant="primary" icon={PlusCircle} onClick={() => goTo('create-school')}>
+                      Add School
+                    </Button>
+                  </>
+                }
+              />
 
-              <div className="form-section">
-                <h3>💰 Fee Structure</h3>
-                <div className="fee-grid">
-                  <div className="form-group">
-                    <label>Tuition Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={schoolForm.feesStructure.tuition}
-                      onChange={(e) => setSchoolForm({
-                        ...schoolForm, 
-                        feesStructure: {...schoolForm.feesStructure, tuition: e.target.value}
-                      })}
-                      placeholder="Enter tuition fee"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Transportation Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={schoolForm.feesStructure.transportation}
-                      onChange={(e) => setSchoolForm({
-                        ...schoolForm, 
-                        feesStructure: {...schoolForm.feesStructure, transportation: e.target.value}
-                      })}
-                      placeholder="Enter transportation fee"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Library Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={schoolForm.feesStructure.library}
-                      onChange={(e) => setSchoolForm({
-                        ...schoolForm, 
-                        feesStructure: {...schoolForm.feesStructure, library: e.target.value}
-                      })}
-                      placeholder="Enter library fee"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Sports Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={schoolForm.feesStructure.sports}
-                      onChange={(e) => setSchoolForm({
-                        ...schoolForm, 
-                        feesStructure: {...schoolForm.feesStructure, sports: e.target.value}
-                      })}
-                      placeholder="Enter sports fee"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Other Charges (₹)</label>
-                    <input
-                      type="number"
-                      value={schoolForm.feesStructure.other}
-                      onChange={(e) => setSchoolForm({
-                        ...schoolForm, 
-                        feesStructure: {...schoolForm.feesStructure, other: e.target.value}
-                      })}
-                      placeholder="Enter other charges"
-                    />
-                  </div>
+              {schools.length === 0 ? (
+                <EmptyState
+                  icon={School}
+                  title="No schools registered yet"
+                  description="Create your first school to get started."
+                  action={
+                    <Button variant="primary" icon={PlusCircle} onClick={() => goTo('create-school')}>
+                      Add School
+                    </Button>
+                  }
+                />
+              ) : (
+                <div className="em-entity-list">
+                  {schools.map((school) => (
+                    <Card
+                      key={school._id}
+                      title={school.name}
+                      actions={
+                        <>
+                          <Button icon={BarChart3} onClick={() => handleSchoolClick(school)}>
+                            Analytics
+                          </Button>
+                          <Button icon={Pencil} onClick={() => handleEditSchool(school)}>
+                            Edit
+                          </Button>
+                          <Button variant="danger" icon={Trash2} onClick={() => handleDeleteSchool(school)}>
+                            Delete
+                          </Button>
+                        </>
+                      }
+                    >
+                      <div className="em-detail-row">
+                        <span>Code</span>
+                        <strong>{school.code}</strong>
+                      </div>
+                      <div className="em-detail-row">
+                        <span>Address</span>
+                        <strong>{school.address}</strong>
+                      </div>
+                      <div className="em-detail-row">
+                        <span>Admin</span>
+                        <strong>{school.admin?.name || 'Not assigned'}</strong>
+                      </div>
+                      <div className="em-detail-row">
+                        <span>Total Fees</span>
+                        <strong>₹{totalFees(school.feesStructure)}</strong>
+                      </div>
+                      <div className="em-detail-row">
+                        <span>Created</span>
+                        <strong>{new Date(school.createdAt).toLocaleDateString()}</strong>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              </div>
-              
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? '🔄 Creating...' : '🏫 Create School'}
-              </button>
-            </form>
-          </div>
-        )}
+              )}
+            </>
+          )}
 
-        {activeTab === 'edit-school' && selectedSchool && (
-          <div className="form-tab">
-            <div className="tab-header">
-              <h2>✏️ Edit School - {selectedSchool.name}</h2>
-              <button onClick={() => setActiveTab('schools')} className="btn-secondary">
-                ← Back to Schools
-              </button>
-            </div>
-            
-            <form onSubmit={handleUpdateSchool} className="super-form">
-              <div className="form-group">
-                <label>School Name</label>
-                <input
-                  type="text"
-                  value={editSchoolForm.name}
-                  onChange={(e) => setEditSchoolForm({...editSchoolForm, name: e.target.value})}
-                  required
-                  placeholder="Enter school name"
-                />
-              </div>
-              <div className="form-group">
-                <label>School Code (New Code)</label>
-                <input
-                  type="text"
-                  value={editSchoolForm.newcode}
-                  onChange={(e) => setEditSchoolForm({...editSchoolForm, newcode: e.target.value})}
-                  placeholder="Enter new school code (leave empty to keep current)"
-                />
-                <small>Current code: {selectedSchool.code}</small>
-              </div>
-              <div className="form-group">
-                <label>Address</label>
-                <textarea
-                  value={editSchoolForm.address}
-                  onChange={(e) => setEditSchoolForm({...editSchoolForm, address: e.target.value})}
-                  required
-                  placeholder="Enter school address"
-                  rows="3"
-                />
-              </div>
+          {activeTab === 'create-school' && (
+            <>
+              <TopBar
+                title="Create New School"
+                actions={
+                  <Button icon={ArrowLeft} onClick={() => goTo('schools')}>
+                    Back to Schools
+                  </Button>
+                }
+              />
+              <Card>
+                <form onSubmit={handleCreateSchool}>
+                  <FormField label="School Name">
+                    <input
+                      className="em-input"
+                      type="text"
+                      value={schoolForm.name}
+                      onChange={(e) => setSchoolForm({ ...schoolForm, name: e.target.value })}
+                      required
+                      placeholder="Enter school name"
+                    />
+                  </FormField>
+                  <FormField label="School Code">
+                    <input
+                      className="em-input"
+                      type="text"
+                      value={schoolForm.code}
+                      onChange={(e) => setSchoolForm({ ...schoolForm, code: e.target.value })}
+                      required
+                      placeholder="Enter unique school code"
+                    />
+                  </FormField>
+                  <FormField label="Address">
+                    <textarea
+                      className="em-textarea"
+                      value={schoolForm.address}
+                      onChange={(e) => setSchoolForm({ ...schoolForm, address: e.target.value })}
+                      required
+                      placeholder="Enter school address"
+                      rows="3"
+                    />
+                  </FormField>
 
-              <div className="form-section">
-                <h3>💰 Fee Structure</h3>
-                <div className="fee-grid">
-                  <div className="form-group">
-                    <label>Tuition Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={editSchoolForm.feesStructure.tuition}
-                      onChange={(e) => setEditSchoolForm({
-                        ...editSchoolForm, 
-                        feesStructure: {...editSchoolForm.feesStructure, tuition: e.target.value}
-                      })}
-                      placeholder="Enter tuition fee"
-                    />
+                  <p className="em-section-title">Fee Structure</p>
+                  <div className="em-form-grid">
+                    {feeFields.map(({ key, label }) => (
+                      <FormField label={label} key={key}>
+                        <input
+                          className="em-input"
+                          type="number"
+                          value={schoolForm.feesStructure[key]}
+                          onChange={(e) =>
+                            setSchoolForm({
+                              ...schoolForm,
+                              feesStructure: { ...schoolForm.feesStructure, [key]: e.target.value },
+                            })
+                          }
+                          placeholder={`Enter ${label.toLowerCase()}`}
+                        />
+                      </FormField>
+                    ))}
                   </div>
-                  <div className="form-group">
-                    <label>Transportation Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={editSchoolForm.feesStructure.transportation}
-                      onChange={(e) => setEditSchoolForm({
-                        ...editSchoolForm, 
-                        feesStructure: {...editSchoolForm.feesStructure, transportation: e.target.value}
-                      })}
-                      placeholder="Enter transportation fee"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Library Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={editSchoolForm.feesStructure.library}
-                      onChange={(e) => setEditSchoolForm({
-                        ...editSchoolForm, 
-                        feesStructure: {...editSchoolForm.feesStructure, library: e.target.value}
-                      })}
-                      placeholder="Enter library fee"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Sports Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={editSchoolForm.feesStructure.sports}
-                      onChange={(e) => setEditSchoolForm({
-                        ...editSchoolForm, 
-                        feesStructure: {...editSchoolForm.feesStructure, sports: e.target.value}
-                      })}
-                      placeholder="Enter sports fee"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Other Charges (₹)</label>
-                    <input
-                      type="number"
-                      value={editSchoolForm.feesStructure.other}
-                      onChange={(e) => setEditSchoolForm({
-                        ...editSchoolForm, 
-                        feesStructure: {...editSchoolForm.feesStructure, other: e.target.value}
-                      })}
-                      placeholder="Enter other charges"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? '🔄 Updating...' : '💾 Update School'}
-              </button>
-            </form>
-          </div>
-        )}
 
-        {activeTab === 'create-admin' && (
-          <div className="form-tab">
-            <h2>👨‍💼 Create School Admin</h2>
-            <form onSubmit={handleCreateAdmin} className="super-form">
-              <div className="form-group">
-                <label>Admin Name</label>
-                <input
-                  type="text"
-                  value={adminForm.name}
-                  onChange={(e) => setAdminForm({...adminForm, name: e.target.value})}
-                  required
-                  placeholder="Enter admin full name"
-                />
-              </div>
-              <div className="form-group">
-                <label>Email Address</label>
-                <input
-                  type="email"
-                  value={adminForm.email}
-                  onChange={(e) => setAdminForm({...adminForm, email: e.target.value})}
-                  required
-                  placeholder="Enter admin email"
-                />
-              </div>
-              <div className="form-group">
-                <label>Password</label>
-                <input
-                  type="password"
-                  value={adminForm.password}
-                  onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
-                  required
-                  placeholder="Set admin password"
-                />
-              </div>
-              <div className="form-group">
-                <label>School Code</label>
-                <input
-                  type="text"
-                  value={adminForm.schoolCode}
-                  onChange={(e) => setAdminForm({...adminForm, schoolCode: e.target.value})}
-                  required
-                  placeholder="Enter school code for assignment"
-                />
-              </div>
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? '🔄 Creating...' : '👨‍💼 Create Admin'}
-              </button>
-            </form>
-          </div>
-        )}
+                  <Button type="submit" variant="primary" loading={loading}>
+                    Create School
+                  </Button>
+                </form>
+              </Card>
+            </>
+          )}
 
-        {activeTab === 'analytics' && (
-          <div className="analytics-tab">
-            <div className="tab-header">
-              <h2>
-                {selectedSchool ? `📈 ${selectedSchool.name} Analytics` : '📈 School Analytics'}
-              </h2>
-              <button onClick={() => setActiveTab('schools')} className="btn-secondary">
-                ← Back to Schools
-              </button>
-            </div>
+          {activeTab === 'edit-school' && selectedSchool && (
+            <>
+              <TopBar
+                title={`Edit School — ${selectedSchool.name}`}
+                actions={
+                  <Button icon={ArrowLeft} onClick={() => goTo('schools')}>
+                    Back to Schools
+                  </Button>
+                }
+              />
+              <Card>
+                <form onSubmit={handleUpdateSchool}>
+                  <FormField label="School Name">
+                    <input
+                      className="em-input"
+                      type="text"
+                      value={editSchoolForm.name}
+                      onChange={(e) => setEditSchoolForm({ ...editSchoolForm, name: e.target.value })}
+                      required
+                      placeholder="Enter school name"
+                    />
+                  </FormField>
+                  <FormField label={`School Code (current: ${selectedSchool.code})`}>
+                    <input
+                      className="em-input"
+                      type="text"
+                      value={editSchoolForm.newcode}
+                      onChange={(e) => setEditSchoolForm({ ...editSchoolForm, newcode: e.target.value })}
+                      placeholder="Enter new school code (leave empty to keep current)"
+                    />
+                  </FormField>
+                  <FormField label="Address">
+                    <textarea
+                      className="em-textarea"
+                      value={editSchoolForm.address}
+                      onChange={(e) => setEditSchoolForm({ ...editSchoolForm, address: e.target.value })}
+                      required
+                      placeholder="Enter school address"
+                      rows="3"
+                    />
+                  </FormField>
 
-            {selectedSchool ? (
-              loading ? (
-                <div className="loading">Loading analytics for {selectedSchool.name}...</div>
-              ) : schoolAnalytics ? (
-                <div className="analytics-content">
-                  <div className="analytics-section">
-                    <h3>🏫 School Overview</h3>
-                    <div className="stats-grid">
-                      <div className="stat-card primary">
-                        <div className="stat-icon">👨‍🏫</div>
-                        <div className="stat-info">
-                          <h3>Teachers</h3>
-                          <p className="stat-number">{schoolAnalytics.overview?.teachers || 0}</p>
-                        </div>
-                      </div>
-                      <div className="stat-card success">
-                        <div className="stat-icon">🎓</div>
-                        <div className="stat-info">
-                          <h3>Students</h3>
-                          <p className="stat-number">{schoolAnalytics.overview?.students || 0}</p>
-                        </div>
-                      </div>
-                      <div className="stat-card warning">
-                        <div className="stat-icon">👨‍👩‍👧‍👦</div>
-                        <div className="stat-info">
-                          <h3>Parents</h3>
-                          <p className="stat-number">{schoolAnalytics.overview?.parents || 0}</p>
-                        </div>
-                      </div>
-                      <div className="stat-card info">
-                        <div className="stat-icon">💼</div>
-                        <div className="stat-info">
-                          <h3>Staff</h3>
-                          <p className="stat-number">{schoolAnalytics.overview?.staff || 0}</p>
-                        </div>
-                      </div>
+                  <p className="em-section-title">Fee Structure</p>
+                  <div className="em-form-grid">
+                    {feeFields.map(({ key, label }) => (
+                      <FormField label={label} key={key}>
+                        <input
+                          className="em-input"
+                          type="number"
+                          value={editSchoolForm.feesStructure[key]}
+                          onChange={(e) =>
+                            setEditSchoolForm({
+                              ...editSchoolForm,
+                              feesStructure: { ...editSchoolForm.feesStructure, [key]: e.target.value },
+                            })
+                          }
+                          placeholder={`Enter ${label.toLowerCase()}`}
+                        />
+                      </FormField>
+                    ))}
+                  </div>
+
+                  <Button type="submit" variant="primary" loading={loading}>
+                    Update School
+                  </Button>
+                </form>
+              </Card>
+            </>
+          )}
+
+          {activeTab === 'create-admin' && (
+            <>
+              <TopBar title="Create School Admin" />
+              <Card>
+                <form onSubmit={handleCreateAdmin}>
+                  <FormField label="Admin Name">
+                    <input
+                      className="em-input"
+                      type="text"
+                      value={adminForm.name}
+                      onChange={(e) => setAdminForm({ ...adminForm, name: e.target.value })}
+                      required
+                      placeholder="Enter admin full name"
+                    />
+                  </FormField>
+                  <FormField label="Email Address">
+                    <input
+                      className="em-input"
+                      type="email"
+                      value={adminForm.email}
+                      onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                      required
+                      placeholder="Enter admin email"
+                    />
+                  </FormField>
+                  <FormField label="Password">
+                    <input
+                      className="em-input"
+                      type="password"
+                      value={adminForm.password}
+                      onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                      required
+                      placeholder="Set admin password"
+                    />
+                  </FormField>
+                  <FormField label="School Code">
+                    <input
+                      className="em-input"
+                      type="text"
+                      value={adminForm.schoolCode}
+                      onChange={(e) => setAdminForm({ ...adminForm, schoolCode: e.target.value })}
+                      required
+                      placeholder="Enter school code for assignment"
+                    />
+                  </FormField>
+                  <Button type="submit" variant="primary" loading={loading}>
+                    Create Admin
+                  </Button>
+                </form>
+              </Card>
+            </>
+          )}
+
+          {activeTab === 'analytics' && (
+            <>
+              <TopBar
+                title={selectedSchool ? `${selectedSchool.name} Analytics` : 'School Analytics'}
+                actions={
+                  <Button icon={ArrowLeft} onClick={() => goTo('schools')}>
+                    Back to Schools
+                  </Button>
+                }
+              />
+
+              {!selectedSchool ? (
+                <EmptyState
+                  icon={BarChart3}
+                  title="No school selected"
+                  description="Choose a school from the Schools tab to view its analytics."
+                />
+              ) : loading ? (
+                <div className="em-loading">Loading analytics for {selectedSchool.name}…</div>
+              ) : !schoolAnalytics ? (
+                <EmptyState title="No analytics data available for this school" />
+              ) : (
+                <>
+                  <div className="em-analytics-section">
+                    <p className="em-section-title">School Overview</p>
+                    <div className="em-stats-grid">
+                      <StatCard icon={Users} label="Teachers" value={schoolAnalytics.overview?.teachers || 0} />
+                      <StatCard icon={GraduationCap} label="Students" value={schoolAnalytics.overview?.students || 0} tone="success" />
+                      <StatCard icon={Users} label="Parents" value={schoolAnalytics.overview?.parents || 0} tone="info" />
+                      <StatCard icon={Briefcase} label="Staff" value={schoolAnalytics.overview?.staff || 0} />
                     </div>
                   </div>
 
-                  <div className="analytics-section">
-                    <h3>📊 Performance Metrics</h3>
-                    <div className="performance-grid">
-                      <div className="metric-card">
-                        <div className="metric-header">
-                          <h4>📅 Attendance</h4>
-                          <span className="trend-indicator up">↗️</span>
-                        </div>
-                        <div className="metric-value">
-                          {schoolAnalytics.performance?.attendance || 0}%
-                        </div>
-                        <div className="metric-progress">
-                          <div 
-                            className="progress-bar" 
-                            style={{width: `${schoolAnalytics.performance?.attendance || 0}%`}}
-                          ></div>
-                        </div>
-                        <div className="metric-details">
-                          Based on real attendance data
-                        </div>
-                      </div>
-
-                      <div className="metric-card">
-                        <div className="metric-header">
-                          <h4>📚 Academic Performance</h4>
-                          <span className="trend-indicator stable">➡️</span>
-                        </div>
-                        <div className="metric-value">
-                          {schoolAnalytics.performance?.grades || 0}%
-                        </div>
-                        <div className="metric-progress">
-                          <div 
-                            className="progress-bar" 
-                            style={{width: `${schoolAnalytics.performance?.grades || 0}%`}}
-                          ></div>
-                        </div>
-                        <div className="metric-details">
-                          Average grade across all subjects
-                        </div>
-                      </div>
+                  <div className="em-analytics-section">
+                    <p className="em-section-title">Performance</p>
+                    <div className="em-stats-grid">
+                      <StatCard label="Attendance" value={`${schoolAnalytics.performance?.attendance || 0}%`} tone="success" />
+                      <StatCard label="Academic Performance" value={`${schoolAnalytics.performance?.grades || 0}%`} tone="info" />
                     </div>
+                    <p className="em-metric-note">
+                      Single current snapshot — the backend doesn't yet track this over time, so no trend is shown.
+                    </p>
                   </div>
 
-                  <div className="analytics-section">
-                    <h3>💰 Fee Structure</h3>
-                    {schoolAnalytics.feesStructure && Object.keys(schoolAnalytics.feesStructure).some(key => schoolAnalytics.feesStructure[key] > 0) ? (
-                      <div className="fee-structure-preview">
-                        {Object.entries(schoolAnalytics.feesStructure).map(([category, amount]) => (
-                          amount > 0 && (
-                            <div key={category} className="fee-item">
-                              <span className="fee-category">{category}</span>
-                              <span className="fee-amount">₹{amount}</span>
-                            </div>
-                          )
+                  <Card title="Fee Structure" className="em-analytics-section">
+                    <BarChart
+                      data={feeFields.map(({ key, label }) => ({
+                        label: label.replace(/ \(₹\)$/, ''),
+                        value: schoolAnalytics.feesStructure?.[key] || 0,
+                      }))}
+                      unit="₹"
+                      emptyLabel="No fee structure defined"
+                    />
+                    {totalFees(schoolAnalytics.feesStructure) > 0 && (
+                      <p className="em-metric-note">Total: ₹{totalFees(schoolAnalytics.feesStructure)}</p>
+                    )}
+                  </Card>
+
+                  <Card title="Recent Activity" className="em-analytics-section">
+                    {schoolAnalytics.recentActivity?.length ? (
+                      <div className="em-entity-list">
+                        {schoolAnalytics.recentActivity.map((activity, index) => (
+                          <div className="em-detail-row" key={index}>
+                            <span>{activity.message}</span>
+                            <strong>{activity.date}</strong>
+                          </div>
                         ))}
-                        <div className="fee-total">
-                          <strong>Total: ₹{Object.values(schoolAnalytics.feesStructure).reduce((sum, fee) => sum + (parseFloat(fee) || 0), 0)}</strong>
-                        </div>
                       </div>
                     ) : (
-                      <div className="no-data">No fee structure defined</div>
+                      <EmptyState title="No recent activity recorded" />
                     )}
-                  </div>
-
-                  <div className="analytics-section">
-                    <h3>📋 Recent Activity</h3>
-                    <div className="activity-list">
-                      {schoolAnalytics.recentActivity?.map((activity, index) => (
-                        <div key={index} className="activity-item">
-                          <span className="activity-icon">
-                            {activity.type === 'teachers' ? '👨‍🏫' : 
-                             activity.type === 'students' ? '🎓' : '📊'}
-                          </span>
-                          <div className="activity-details">
-                            <p>{activity.message}</p>
-                            <small>{activity.date}</small>
-                          </div>
-                        </div>
-                      )) || (
-                        <div className="no-data">No recent activity recorded</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="no-data">No analytics data available for this school</div>
-              )
-            ) : (
-              <div className="no-data">
-                Please select a school from the Schools tab to view detailed analytics
-              </div>
-            )}
-          </div>
-        )}
+                  </Card>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </main>
     </div>
   );

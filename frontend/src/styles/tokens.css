@@ -1,0 +1,78 @@
+/*
+  EduManage design tokens.
+  Single source of truth for color, type, spacing, radius, and layout
+  constants used across every role's dashboard. Change a value here and
+  it propagates everywhere — no per-page overrides for these primitives.
+*/
+
+:root {
+  /* ---- Color ---- */
+  --ink: #1e2a4a;          /* primary text, primary buttons */
+  --ink-soft: #55618a;      /* secondary text */
+  --ink-faint: #8890ab;     /* placeholder / disabled text */
+
+  --paper: #f5f6f8;         /* app background */
+  --surface: #ffffff;       /* cards, panels, inputs */
+  --border: #e3e5ec;        /* hairline borders */
+  --border-strong: #cdd1de;
+
+  --accent: #b8791a;        /* primary interactive accent, used sparingly */
+  --accent-soft: #f4e6cc;
+  --accent-ink: #7a4f10;    /* text on accent-soft backgrounds */
+
+  --success: #2f7d53;
+  --success-soft: #e3f1e9;
+  --danger: #c1443c;
+  --danger-soft: #fbe7e5;
+  --danger-soft-hover: #f6d3d0;
+  --info: #3a6ea5;
+  --info-soft: #e6eef7;
+  --on-ink: #ffffff;
+  --ink-hover: #16213d;
+
+  /* ---- Type ---- */
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+
+  /* ---- Spacing scale ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* ---- Radius ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  /* ---- Shadow (sparing — overlays only, not every card) ---- */
+  --shadow-sm: 0 1px 2px rgba(30, 42, 74, 0.06);
+  --shadow-md: 0 8px 24px rgba(30, 42, 74, 0.14);
+
+  /* ---- Layout ---- */
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 64px;
+  --topbar-height: 60px;
+  --content-max: 1120px;
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+  }
+}

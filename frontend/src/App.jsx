@@ -8,8 +8,15 @@ import ParentPanel from './pages/parent/Dashboard';
 
 function App() {
   const token = localStorage.getItem('token');
-  // const userRole = localStorage.getItem('userRole');
- 
+  const userRole = localStorage.getItem('userRole');
+
+  // Verified role strings, straight from backend/models/User.js's enum:
+  // "superadmin", "schooladmin", "teacher", "student", "parent" (+ "staff",
+  // which has no dashboard route yet — out of scope for this pass).
+  // Each protected route now requires BOTH a token AND a matching role,
+  // instead of just a token. A logged-in user hitting a route that isn't
+  // theirs is redirected to '/', same as an unauthenticated user — no new
+  // redirect target, no change to backend calls or auth behavior.
 
   return (
     <div className="App">
@@ -17,32 +24,32 @@ function App() {
         <Routes>
           <Route
             path='/'
-            element ={<Login></Login>} 
+            element={token ? <Navigate to={`/${userRole}/dashboard`} replace /> : <Login />}
           />
 
           <Route
             path='/superadmin/dashboard'
-            element={token ? <SuperAdminDashboard /> : <Navigate to='/' replace />}
+            element={token && userRole === 'superadmin' ? <SuperAdminDashboard /> : <Navigate to='/' replace />}
           />
 
           <Route
             path='/schooladmin/dashboard'
-            element={token ? <SchoolAdmin /> : <Navigate to='/' replace />}
+            element={token && userRole === 'schooladmin' ? <SchoolAdmin /> : <Navigate to='/' replace />}
           />
 
           <Route
             path='/teacher/dashboard'
-            element={token ? <TeacherPanel /> : <Navigate to='/' replace />}
+            element={token && userRole === 'teacher' ? <TeacherPanel /> : <Navigate to='/' replace />}
           />
 
           <Route
             path='/student/dashboard'
-            element={token ? <StudentPanel /> : <Navigate to='/' replace />}
+            element={token && userRole === 'student' ? <StudentPanel /> : <Navigate to='/' replace />}
           />
 
           <Route
             path='/parent/dashboard'
-            element={token ? <ParentPanel /> : <Navigate to='/' replace />}
+            element={token && userRole === 'parent' ? <ParentPanel /> : <Navigate to='/' replace />}
           />
           <Route
             path='*'

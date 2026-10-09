@@ -1,0 +1,50 @@
+.em-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.em-field__label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.em-field__error {
+  font-size: var(--text-xs);
+  color: var(--danger);
+}
+
+.em-input,
+.em-select,
+.em-textarea {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  transition: border-color var(--duration-fast) var(--ease);
+}
+
+.em-input:focus,
+.em-select:focus,
+.em-textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(30, 42, 74, 0.1);
+}
+
+.em-input::placeholder,
+.em-textarea::placeholder {
+  color: var(--ink-faint);
+}
+
+.em-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 var(--space-4);
+}
