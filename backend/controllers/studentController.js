@@ -46,9 +46,9 @@ exports.getDashboard = async (req, res) => {
       ? (recentPresent / recentAttendance) * 100 
       : 0;
 
-    const recentGrades = await Grade.find({ student: studentId })
-      .sort({ createdAt: -1 })
-      .limit(5);
+    const Grades = await Grade.find({ student: studentId })
+      .sort({ createdAt: -1 });
+ const recentGrades = Grades.slice(0,5);
 
     const studentWithClass = await User.findById(studentId).populate('classroom');
     let upcomingHomework = [];
@@ -101,7 +101,7 @@ exports.getDashboard = async (req, res) => {
         parents: student.parents
       },
       summary: {
-        
+        overallAverage: (Grades.reduce((sum, g) => sum + g.percentage, 0) /Grades.length).toFixed(2) + '%',
         recentAttendance: recentAttendancePercentage.toFixed(2) + '%',
         totalExams: recentGrades.length,
         upcomingHomework: upcomingHomework.length,
@@ -123,7 +123,7 @@ exports.getDashboard = async (req, res) => {
       upcomingExams: upcomingExams
     };
 
-  console.log(dashboardData)
+  
 
     res.json(dashboardData);
 
@@ -166,7 +166,6 @@ exports.getMyAttendance = async (req, res) => {
         absentClasses: totalClasses - presentClasses,
         attendancePercentage: attendancePercentage + '%'
       }
-      console.log(summary)
 
     res.json({
       student: req.user.name,
