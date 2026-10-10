@@ -19,7 +19,6 @@ const checkStudent = async (req) => {
 
 exports.getDashboard = async (req, res) => {
   try {
-   
     const studentId = await checkStudent(req);
     const student = await User.findById(studentId)
       .populate('classroom', 'name grade section');
@@ -28,71 +27,76 @@ exports.getDashboard = async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    const thirtyDaysAgo = new Date();
+    const classroomId = student.classroom?._id;
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const recentAttendance = await Attendance.countDocuments({
-      student: studentId,
-      date: { $gte: thirtyDaysAgo }
-    });
+    const [
+      attendanceStats,
+      gradeStats,
+      recentGrades,
+      upcomingHomework,
+      examSchedules,
+      unreadMessages
+    ] = await Promise.all([
+      
+      Attendance.aggregate([
+        { $match: { student: student._id, date: { $gte: thirtyDaysAgo } } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            present: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } }
+          }
+        }
+      ]),
+
     
-    const recentPresent = await Attendance.countDocuments({
-      student: studentId,
-      date: { $gte: thirtyDaysAgo },
-      status: "present"
-    });
+      Grade.aggregate([
+        { $match: { student: student._id } },
+        { $group: { _id: null, avg: { $avg: '$percentage' }, count: { $sum: 1 } } }
+      ]),
 
-    const recentAttendancePercentage = recentAttendance > 0 
-      ? (recentPresent / recentAttendance) * 100 
-      : 0;
+      Grade.find({ student: studentId }).sort({ createdAt: -1 }).limit(5),
 
-    const Grades = await Grade.find({ student: studentId })
-      .sort({ createdAt: -1 });
- const recentGrades = Grades.slice(0,5);
+      classroomId
+        ? Homework.find({
+            classroom: classroomId,
+            isActive: true,
+            dueDate: { $gte: now }
+          }).sort({ dueDate: 1 }).limit(5)
+        : [],
 
-    const studentWithClass = await User.findById(studentId).populate('classroom');
-    let upcomingHomework = [];
-    
-    if (studentWithClass.classroom) {
-      upcomingHomework = await Homework.find({
-        classroom: studentWithClass.classroom._id,
-        isActive: true,
-        dueDate: { $gte: new Date() }
-      })
-      .sort({ dueDate: 1 })
-      .limit(5);
-    }
+      classroomId
+        ? ExamSchedule.find({
+            school: student.school,
+            isPublished: true,
+            schedules: { $elemMatch: { classroom: classroomId, date: { $gte: now } } }
+          })
+        : [],
 
-    let upcomingExams = [];
-    
-    if (studentWithClass.classroom) {
-      const examSchedules = await ExamSchedule.find({
-        school: req.user.school,
-        isPublished: true,
-        'schedules.classroom': studentWithClass.classroom._id,
-        'schedules.date': { $gte: new Date() }
-      })
-      .sort({ 'schedules.date': 1 })
-      .limit(5);
+      Message.countDocuments({ to: studentId, isRead: false })
+    ]);
 
-      // Flatten the schedules
-      upcomingExams = examSchedules.flatMap(exam => 
-        exam.schedules.map(schedule => ({
-          title: exam.title,
-          subject: schedule.subject,
-          date: schedule.date,
-          examType: exam.examType
-        }))
-      ).slice(0, 5);
-    }
+    const upcomingExams = examSchedules
+      .flatMap(exam =>
+        exam.schedules
+          .filter(s => s.classroom.equals(classroomId) && s.date >= now)
+          .map(s => ({
+            title: exam.title,
+            subject: s.subject,
+            date: s.date,
+            examType: exam.examType
+          }))
+      )
+      .sort((a, b) => a.date - b.date)
+      .slice(0, 5);
 
-    const unreadMessages = await Message.countDocuments({
-      to: studentId,
-      isRead: false
-    });
+    const { total = 0, present = 0 } = attendanceStats[0] || {};
+    const { avg = 0, count = 0 } = gradeStats[0] || {};
 
-
-    const dashboardData = {
+    res.json({
       profile: {
         _id: student._id,
         name: student.name,
@@ -101,18 +105,18 @@ exports.getDashboard = async (req, res) => {
         parents: student.parents
       },
       summary: {
-        overallAverage: (Grades.reduce((sum, g) => sum + g.percentage, 0) /Grades.length).toFixed(2) + '%',
-        recentAttendance: recentAttendancePercentage.toFixed(2) + '%',
-        totalExams: recentGrades.length,
+        overallAverage: Number(avg.toFixed(2)) + '%',
+        recentAttendance: total ? Number(((present / total) * 100).toFixed(2)) + '%' : 0 + '%',
+        totalExams: count,
         upcomingHomework: upcomingHomework.length,
         upcomingExams: upcomingExams.length,
         unreadMessages
       },
-      recentGrades: recentGrades.map(grade => ({
-        subject: grade.subject,
-        examTitle: grade.examTitle,
-        percentage: grade.percentage,
-        grade: grade.grade
+      recentGrades: recentGrades.map(g => ({
+        subject: g.subject,
+        examTitle: g.examTitle,
+        percentage: g.percentage,
+        grade: g.grade
       })),
       upcomingHomework: upcomingHomework.map(hw => ({
         _id: hw._id,
@@ -120,15 +124,14 @@ exports.getDashboard = async (req, res) => {
         subject: hw.subject,
         dueDate: hw.dueDate
       })),
-      upcomingExams: upcomingExams
-    };
-
-  
-
-    res.json(dashboardData);
-
+      upcomingExams
+    });
   } catch (err) {
-    res.status(err.statusCode || 500).json({ message: err.message });
+    const status = err.statusCode || 500;
+    if (status === 500) console.error(err);
+    res.status(status).json({
+      message: status === 500 ? "Internal server error" : err.message
+    });
   }
 };
 exports.getMyAttendance = async (req, res) => {
