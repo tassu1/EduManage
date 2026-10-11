@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User")
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -10,7 +11,7 @@ const authMiddleware = async (req, res, next) => {
       token = req.headers.Authorization.split(' ')[1];
     }
 
-
+console.log(token)
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -19,18 +20,36 @@ const authMiddleware = async (req, res, next) => {
     }
 
     try {
-   
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      req.user = decoded;
+   console.log("yaha aagya")
       
-      next();
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route - Invalid Token'
-      });
-    }
+const decoded = jwt.verify(token, process.env.JWT_SECRET);
+console.log("yaha bhi")
+
+
+const user = await User.findById(decoded.id).select("-password");
+
+if (!user) {
+  return res.status(401).json({
+    success: false,
+    message: "User account no longer exists",
+  });
+}
+
+req.user = user;
+
+next();
+
+    
+} catch (error) {
+  console.error("JWT Error Name:", error.name);
+  console.error("JWT Error Message:", error.message);
+
+  return res.status(401).json({
+    success: false,
+    message: "Not authorized to access this route - Invalid Token"
+  });
+}
+
   } catch (error) {
     return res.status(500).json({
       success: false,
