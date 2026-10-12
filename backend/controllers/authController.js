@@ -37,11 +37,7 @@ const schoolExists = await School.findById(req.user.school);
         message: "You cannot create users for another school",
       });
     }
-
     
-
-   
-
     const normalizedEmail = email.trim().toLowerCase();
     const userExists = await User.findOne({
       email: normalizedEmail,
