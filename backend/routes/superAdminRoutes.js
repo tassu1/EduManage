@@ -7,7 +7,6 @@ const {
   editSchool,
   deleteSchool,
   createSchoolAdmin,
-  upgradeUserRole,
   getSchoolAnalytics
 } = require('../controllers/superAdminController');
 
@@ -21,7 +20,6 @@ router.post('/school', createSchool);
 router.put('/school/:code', editSchool);
 router.delete('/school/:code', deleteSchool);
 router.post('/create-admin', createSchoolAdmin);
-router.post('/upgrade-user', upgradeUserRole);
 
 router.get('/school/:schoolId/analytics', getSchoolAnalytics);
 
