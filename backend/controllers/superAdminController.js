@@ -3,13 +3,6 @@ const User = require("../models/User");
 const Attendance = require("../models/Attendance");
 const Grade = require("../models/Grade");
 
-const checkSuperAdmin = (req) => {
-  if (!req.user || req.user.role !== "superadmin") {
-    const err = new Error("Not authorized as superadmin");
-    err.statusCode = 403;
-    throw err;
-  }
-};
 
 exports.createSchool = async (req, res) => {
   try {
@@ -91,7 +84,7 @@ exports.editSchool = async (req, res) => {
 
 exports.deleteSchool = async (req, res) => {
   try {
-    checkSuperAdmin(req);
+   
 
     const { code } = req.params;
     
@@ -111,7 +104,7 @@ exports.deleteSchool = async (req, res) => {
 
 exports.createSchoolAdmin = async (req, res) => {
   try {
-    checkSuperAdmin(req);
+  
 
     const { name, email, password, schoolCode } = req.body;
     
@@ -144,43 +137,6 @@ exports.createSchoolAdmin = async (req, res) => {
       role: admin.role,
       school: school.name
     });
-  } catch (err) {
-    res.status(err.statusCode || 500).json({ message: err.message });
-  }
-};
-
-exports.upgradeUserRole = async (req, res) => {
-  try {
-    checkSuperAdmin(req);
-    
-    const { email, newRole, schoolCode } = req.body; 
-    
-    const user = await User.findOne({ 
-      email: email, 
-      createdBy: req.user.id
-    });
-
-    const allowedRoles = ["schooladmin", "teacher", "staff"];
-    if (!allowedRoles.includes(newRole))
-      return res.status(403).json({ message: "Invalid role for upgrade" });
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    user.role = newRole;
-
-    if (newRole === "schooladmin") {
-      const school = await School.findOne({ 
-        code: schoolCode, 
-        superAdmin: req.user.id  
-      });
-      if (!school) return res.status(404).json({ message: "School not found" });
-      school.adminId = user._id;
-      await school.save();
-      user.school = school._id;
-    }
-
-    await user.save();
-    res.json({ message: `User ${user.name} upgraded to ${newRole}`, user });
   } catch (err) {
     res.status(err.statusCode || 500).json({ message: err.message });
   }
@@ -265,11 +221,11 @@ exports.getSchoolAnalytics = async (req, res) => {
       _id: schoolId, 
       superAdmin: req.user.id 
     }).populate('teachers students parents staff adminId');
-console.log("idhr")
+
     if (!school) {
       return res.status(404).json({ message: "School not found or not authorized" });
     }
-console.log("mtlb idhr")
+
     const attendanceRecords = await Attendance.find({ school: schoolId });
     console.log(attendanceRecords)
     if (attendanceRecords.length === 0) {
@@ -288,8 +244,6 @@ console.log("mtlb idhr")
 
     const totalPercentage = gradeRecords.reduce((sum, record) => sum + record.percentage, 0);
    const averagegr = Number((totalPercentage / gradeRecords.length).toFixed(2));
-const highest = Number(Math.max(...gradeRecords.map(record => record.percentage)).toFixed(2));
-const lowest = Number(Math.min(...gradeRecords.map(record => record.percentage)).toFixed(2));
    
     console.log("dekhte h")
 
@@ -329,35 +283,3 @@ const lowest = Number(Math.min(...gradeRecords.map(record => record.percentage))
   }
 };
 
-
-// const calculateRealAttendance = async (schoolId) => {
-//   try {
-  
-    
-//     return {
-//       average: Math.round(average),
-//       totalRecords: attendanceRecords.length,
-//       present: presentCount,
-//       absent: attendanceRecords.length - presentCount
-//     };
-//   } catch (error) {
-//     return { average: 0, totalRecords: 0, present: 0, absent: 0 };
-//   }
-// };
-
-
-// const calculateRealGrades = async (schoolId) => {
-//   try {
-
-    
-
-//     return {
-//       average: Math.round(average),
-//       totalRecords: gradeRecords.length,
-//       highest: Math.round(highest),
-//       lowest: Math.round(lowest)
-//     };
-//   } catch (error) {
-//     return { average: 0, totalRecords: 0, highest: 0, lowest: 0 };
-//   }
-// };
