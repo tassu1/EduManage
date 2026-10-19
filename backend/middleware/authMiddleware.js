@@ -7,8 +7,6 @@ const authMiddleware = async (req, res, next) => {
   
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
-    } else if (req.headers.Authorization && req.headers.Authorization.startsWith('Bearer')) {
-      token = req.headers.Authorization.split(' ')[1];
     }
 
 
@@ -20,10 +18,10 @@ const authMiddleware = async (req, res, next) => {
     }
 
     try {
-   console.log("yaha aagya")
+  
       
 const decoded = jwt.verify(token, process.env.JWT_SECRET);
-console.log("yaha bhi")
+
 
 
 const user = await User.findById(decoded.id).select("-password");
