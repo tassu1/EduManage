@@ -11,7 +11,7 @@ const authMiddleware = async (req, res, next) => {
       token = req.headers.Authorization.split(' ')[1];
     }
 
-console.log(token)
+
     if (!token) {
       return res.status(401).json({
         success: false,
