@@ -43,7 +43,7 @@ exports.createClassroom = async (req, res) => {
       classTeacherId = teacher._id;
     }
 
-    const classroom = await Classroom.create({
+   await Classroom.create({
       name,
       grade,
       section,
@@ -52,11 +52,11 @@ exports.createClassroom = async (req, res) => {
       school: schoolId
     });
 
-    await classroom.populate('classTeacher', 'name email');
+   
 
     res.status(201).json({
-      message: "Classroom created successfully",
-      classroom
+      message: "Classroom created successfully"
+      
     });
   } catch (err) {
     res.status(err.statusCode || 500).json({ message: err.message });
