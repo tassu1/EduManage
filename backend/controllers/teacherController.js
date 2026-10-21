@@ -491,7 +491,6 @@ exports.getHomeworkFile = async (req, res) => {
    
     
     const homework = await Homework.findById(homeworkId);
-    console.log(homework)
     if (!homework) return res.status(404).json({ message: "Homework not found" });
 
     const attachment = homework.attachments.find(att => att.filename === filename);
